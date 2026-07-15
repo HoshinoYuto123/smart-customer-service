@@ -121,9 +121,10 @@ add_section('核心项目经历')
 add_sub('SCS-Agent — 智能客服 Agent 系统（VibeCoding 实践）')
 add_sub_info('技术栈：Python, LangGraph, FastAPI, ChromaDB, DeepSeek API  |  GitHub 开源，已部署上线')
 add_bullet('使用 Claude Code 进行 VibeCoding 辅助开发，通过自然语言描述需求、拆解任务，由 AI 协助完成代码生成与调试，完成从 0 到 1 的项目构建。')
-add_bullet('基于 LangGraph 搭建多节点 Agent 状态机（澄清 → 路由 → 检索执行 → 回复 → 降级），实现多轮对话、反问澄清与工具调用。')
+add_bullet('基于 LangChain / LangGraph 框架搭建多节点 Agent 状态机（澄清 → 路由 → 检索执行 → 回复 → 降级），实现多轮对话、反问澄清与工具调用。')
 add_bullet('构建 FAQ 知识库（4 个业务域 × 40 条问答）与物流信息数据库（12 条记录），实现基础的 RAG 检索问答功能。')
-add_bullet('设计电商风格聊天前端界面，支持历史会话管理与上下文记忆；部署至 Render 平台实现公网访问。')
+add_bullet('设计电商风格聊天前端界面，通过 SQLite 持久化存储实现历史会话管理与上下文记忆，支持对话恢复与 Token 感知的上下文截断。')
+add_bullet('部署至 Render 平台实现公网访问，项目已开源（95+ 文件、38 个单元测试）。')
 
 # ═══════════════════════════════════════
 # 教育背景
