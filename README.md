@@ -1,5 +1,7 @@
 # 智能客服 Agent 系统 (SCS-Agent)
 
+🚀 **在线体验**：https://smart-customer-service-8djy.onrender.com/static/chat.html
+
 基于 LangGraph + DeepSeek 的生产级智能客服系统，支持多轮对话、工具调用、RAG 知识库、历史会话管理。
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/HoshinoYuto123/smart-customer-service)
