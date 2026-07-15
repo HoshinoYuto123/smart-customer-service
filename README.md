@@ -4,8 +4,6 @@
 
 基于 LangGraph + DeepSeek 的生产级智能客服系统，支持多轮对话、工具调用、RAG 知识库、历史会话管理。
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/HoshinoYuto123/smart-customer-service)
-
 ## 功能特性
 
 - **多轮对话** — LangGraph 状态机驱动，自动反问澄清模糊问题
@@ -42,7 +40,7 @@ python -m app.main
 
 ### 4. 打开界面
 
-浏览器访问 **http://localhost:8000**
+浏览器访问 **https://smart-customer-service-8djy.onrender.com/static/chat.html**
 
 ## 项目结构
 
