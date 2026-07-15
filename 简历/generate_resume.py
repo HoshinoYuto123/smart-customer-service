@@ -1,7 +1,9 @@
 """Generate a concise one-page Chinese resume."""
 from docx import Document
-from docx.shared import Pt, Cm, RGBColor
+import os
+from docx.shared import Pt, Cm, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 
 doc = Document()
@@ -91,11 +93,54 @@ def add_sub_info(text):
     r.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
 
 # ═══════════════════════════════════════
-# HEADER
+# HEADER (table layout: info left, photo right)
 # ═══════════════════════════════════════
-add_title('张 宇 辰', 20)
-add_info('电话：138-xxxx-6789  |  邮箱：zhangyuchen@example.com  |  现居：广东省深圳市')
-add_info('江西财经大学 · 软件工程 · 本科（2027届）  |  GitHub：github.com/HoshinoYuto123')
+header_table = doc.add_table(rows=1, cols=2)
+header_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+# Remove table borders
+for row in header_table.rows:
+    for cell in row.cells:
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.font.name = '宋体'
+        tcPr = cell._tc.get_or_add_tcPr()
+        tcBorders = tcPr.makeelement(qn('w:tcBorders'), {})
+        for edge in ('top', 'left', 'bottom', 'right'):
+            element = tcBorders.makeelement(qn(f'w:{edge}'), {qn('w:val'): 'none', qn('w:sz'): '0', qn('w:space'): '0'})
+            tcBorders.append(element)
+        tcPr.append(tcBorders)
+
+# Left cell: personal info
+left_cell = header_table.cell(0, 0)
+left_cell.width = Cm(12)
+
+p = left_cell.paragraphs[0]
+p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+p.paragraph_format.space_after = Pt(2)
+r = p.add_run('张 宇 辰')
+run_font(r, '黑体', 20, True)
+
+p2 = left_cell.add_paragraph()
+p2.paragraph_format.space_after = Pt(1)
+r2 = p2.add_run('电话：138-xxxx-6789  |  邮箱：zhangyuchen@example.com  |  现居：广东省深圳市')
+run_font(r2, '宋体', 9)
+r2.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
+
+p3 = left_cell.add_paragraph()
+r3 = p3.add_run('江西财经大学 · 软件工程 · 本科（2027届）  |  GitHub：github.com/HoshinoYuto123')
+run_font(r3, '宋体', 9)
+r3.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
+
+# Right cell: photo
+right_cell = header_table.cell(0, 1)
+right_cell.width = Cm(4.5)
+p_photo = right_cell.paragraphs[0]
+p_photo.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+photo_path = os.path.join(os.path.dirname(__file__), 'photo.jpg')
+if os.path.exists(photo_path):
+    r_photo = p_photo.add_run()
+    r_photo.add_picture(photo_path, width=Inches(1.1), height=Inches(1.45))
 
 # ═══════════════════════════════════════
 # 求职意向
