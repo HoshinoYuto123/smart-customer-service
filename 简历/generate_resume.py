@@ -108,10 +108,10 @@ add_bullet('独立完成从需求到上线的全栈 AI 项目（智能客服 Age
 # 核心技能
 # ═══════════════════════════════════════
 add_section('核心技能')
-add_bullet('AI Agent：熟练掌握 LangGraph 多节点状态机，构建 clarify → router → executor → respond → fallback 决策链路；理解 Function Calling 工具调用机制。')
-add_bullet('LLM 应用：设计 Provider 抽象层，支持 DeepSeek / OpenAI / Claude / Qwen 多模型按场景动态切换（路由/澄清/回答/降级）；掌握 Prompt YAML 模板化管理。')
-add_bullet('RAG & 后端：ChromaDB + BM25 + Cross-Encoder 混合检索；FastAPI 全链路异步；熔断/重试/限流弹性机制；SQLite 持久化会话与 Token 感知上下文截断。')
-add_bullet('工程部署：Docker + K8s 容器化；Render 公网上线；独立完成电商风格客服 UI（原生 HTML/CSS/JS）；VibeCoding 全流程 AI 辅助开发。')
+add_bullet('编程语言：掌握 C++ 基础（语法、STL、面向对象），了解 Python 基本使用。')
+add_bullet('AI 应用：了解 LangChain / LangGraph 框架基础概念，理解 Agent 多节点状态机工作流程。')
+add_bullet('RAG 检索增强生成：了解向量数据库（ChromaDB）基本使用、FAQ 知识库构建与混合检索（向量 + 关键词）基础流程。')
+add_bullet('工具与部署：了解 FastAPI 基础、Git 版本控制、Docker 容器化部署；熟练使用 Claude Code 等 AI 工具进行辅助开发。')
 
 # ═══════════════════════════════════════
 # 项目经历
