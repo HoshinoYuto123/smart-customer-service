@@ -2,167 +2,172 @@
 
 ---
 
-## 一、项目中 FastAPI 扮演什么角色？
+## 一、基础概念解释
 
-FastAPI 是本项目的 **Web 服务框架**，负责：
-- 接收用户的 HTTP 请求（REST API）
-- 将请求路由到 Agent 处理链路
-- 返回 AI 生成的回复给前端
-- 同时支持 WebSocket 实时通信和静态页面托管
+### 1. 什么是路由？
 
-一句话：**前端 ↔ FastAPI ↔ Agent 引擎**，FastAPI 是中间桥梁。
+路由就是 **"根据 URL 地址，把请求分发给对应的处理函数"**。
+
+比如你打开 `http://xxx.com/api/v1/chat`，服务器收到后根据 `/api/v1/chat` 这个路径，找到对应的函数来执行。就像一个快递分拣中心：看到地址是北京的 → 走北京线；看到是上海的 → 走上海线。
+
+```python
+@router.post("/chat")       # URL 是 /chat → 执行 chat() 函数
+async def chat(request):
+    ...
+
+@router.get("/sessions")    # URL 是 /sessions → 执行 list_sessions() 函数
+async def list_sessions():
+    ...
+```
+
+### 2. 什么是同步和异步？
+
+用现实中的例子理解：
+
+- **同步**：你去奶茶店点一杯奶茶，站在柜台前一直等到做好才走。期间什么也干不了。
+- **异步**：你点完奶茶拿个号，然后去旁边便利店买东西，号响了再回来取。等待的时间可以干别的。
+
+程序里的"奶茶"就是**调用外部 API**（比如调 DeepSeek），这个过程可能要 2~30 秒。如果是同步，服务器这期间只能干等着，一个用户就占住了。异步的话，服务器可以在等待期间处理其他用户的请求。
+
+### 3. 什么是 async / await？
+
+`async` 和 `await` 是 Python 写异步代码的语法：
+
+- `async def`：定义一个"可以暂停"的函数
+- `await`：在这里暂停，去干别的事，等结果回来了再继续
+
+```python
+async def chat(request):
+    result = await agent_graph.ainvoke(state)  # 暂停，先去处理别的请求
+    return result                               # agent 跑完了，回来继续
+```
+
+### 4. 什么是 Pydantic？
+
+Pydantic 是一个**数据校验库**。你定义一个"数据模板"（继承 `BaseModel`），它自动帮你检查数据格式对不对。
+
+比如你规定 `session_id` 必须是字符串，如果前端发了个数字过来，Pydantic 会直接拒绝并返回错误，你不需要手写一堆 `if` 判断。
+
+```python
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    session_id: str      # 必须是字符串
+    message: str         # 必须是字符串
+    context: dict = {}   # 可选，默认空字典
+```
+
+### 5. 什么是高并发？
+
+高并发就是**同时有很多用户访问，服务器依然能正常响应**。
+
+FastAPI 天生适合高并发，因为它用异步（`async/await`）处理请求。比如 100 个人同时发消息问客服，服务器不是排队一个个处理，而是同时接收、各自等待 AI 返回、谁先返回就先回复谁。
 
 ---
 
-## 二、项目里具体写了哪些接口？
+## 二、此项目的路由是怎么设计实现的？
 
-### REST 接口（`app/api/routes.py`）
+项目有两层路由：
 
-| 方法 | 路径 | 功能 |
-|------|------|------|
-| `GET` | `/api/v1/health` | 健康检查，返回服务状态 |
-| `POST` | `/api/v1/chat` | **核心接口**——发送消息，触发 Agent 全链路处理，返回 AI 回复 |
-| `GET` | `/api/v1/sessions` | 获取历史会话列表 |
-| `GET` | `/api/v1/sessions/{id}` | 获取某个会话的完整消息记录 |
-| `DELETE` | `/api/v1/sessions/{id}` | 删除指定会话 |
+### 第一层：HTTP 路由（FastAPI 层）
 
-### WebSocket 接口（`app/api/websocket.py`）
-
-| 路径 | 功能 |
-|------|------|
-| `WS /api/v1/chat/stream` | 持续连接，支持多轮对话，每次发送"处理中"状态后再返回结果 |
-
-### 页面托管
-
-在 `main.py` 中挂载了 `app/static/` 目录为静态文件，访问 `/` 自动跳转到聊天界面 `chat.html`。
+在 `app/api/routes.py` 中用 `APIRouter` 定义：
 
 ```python
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+router = APIRouter(prefix="/api/v1")  # 所有接口都加上 /api/v1 前缀
 
-@app.get("/")
-async def root():
-    return RedirectResponse(url="/static/chat.html")
+@router.get("/health")                # → GET /api/v1/health
+@router.post("/chat")                 # → POST /api/v1/chat
+@router.get("/sessions")              # → GET /api/v1/sessions
+@router.get("/sessions/{id}")         # → GET /api/v1/sessions/xxx  ({id}是动态参数)
+@router.delete("/sessions/{id}")      # → DELETE /api/v1/sessions/xxx
+```
+
+然后在 `app/main.py` 中注册：
+```python
+app.include_router(api_router)   # 注册 REST 接口
+app.include_router(ws_router)    # 注册 WebSocket 接口
+app.mount("/static", ...)        # 托管前端页面
+```
+
+### 第二层：Agent 业务路由（LangGraph 层）
+
+代码在 `app/agent/nodes/router.py`，负责判断用户问题属于哪个业务域。
+
+**三层级联**，从快到慢：
+
+| 层 | 方式 | 速度 | 费用 |
+|----|------|------|------|
+| Layer 1 | 关键词匹配（4个域各有一组关键词，统计命中多少） | 毫秒级 | 免费 |
+| Layer 2 | RAG 读取各业务域的说明文档进行匹配 | 秒级 | 免费 |
+| Layer 3 | 调大模型（DeepSeek）做最终判断 | 2~30秒 | 花钱 |
+
+另外做了特殊识别：如果用户输入里有订单号（`ORD` + 数字），直接打高分给订单域，跳过 LLM 调用；有手机号同理。
+
+路由出结果后，根据业务域自动选择调用哪些工具：
+```python
+"account":    → FAQ检索 + 账户查询
+"order":      → FAQ检索 + 订单查询（物流信息）
+"after_sale": → FAQ检索 + 创建工单
 ```
 
 ---
 
-## 三、`POST /api/v1/chat` 接口的处理流程是怎样的？
+## 三、我在此项目用 FastAPI 实现了什么？
 
-1. 接收 `ChatRequest`（包含 `session_id`、`message`、`context`）
-2. 使用 **Pydantic 自动校验**请求体格式，不合法直接返回 422
-3. 生成 `trace_id` 用于全链路追踪
-4. 从数据库获取或创建会话
-5. 组装 `AgentState`（LangGraph 状态机的输入）
-6. 调用 `agent_graph.ainvoke()` 执行 Agent 全链路
-7. 拿到 `final_response` 后封装为 `ChatResponse` 返回
+### 1. 核心对话接口 `POST /api/v1/chat`
 
-关键代码：
+整个项目最关键的接口。流程：
+1. 前端发来 `{session_id, message}`
+2. Pydantic 自动校验格式
+3. 生成 `trace_id` 全程追踪
+4. 从 SQLite 加载历史会话（实现上下文记忆）
+5. 组装 Agent 状态 → 执行 LangGraph 全链路（澄清→路由→检索→回复）
+6. 返回 AI 回复和快捷回复按钮
+
 ```python
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    result = await agent_graph.ainvoke(initial_state)  # 异步执行 Agent
+    result = await agent_graph.ainvoke(initial_state)  # 异步执行
     return ChatResponse(response=AgentResponse(**final_response))
 ```
 
----
+### 2. 历史会话管理（3 个接口）
 
-## 四、Pydantic 在项目中是怎么用的？
+`GET /sessions` — 列出所有历史会话；`GET /sessions/{id}` — 查看某次对话的完整记录；`DELETE /sessions/{id}` — 删除会话。数据存在 SQLite 中。
 
-用于 **请求/响应数据校验**和**配置管理**。
+### 3. 健康检查 `GET /api/v1/health`
 
-### 请求校验
-```python
-class ChatRequest(BaseModel):
-    session_id: str
-    message: str
-    context: dict = {}
-```
-FastAPI 收到请求后自动按这个模型校验，`session_id` 和 `message` 缺一不可，类型不对也会报错。
+返回服务状态、版本号、当前可用的 LLM Provider。K8s/Docker 用来判断服务是否还活着。
 
-### 响应校验
-```python
-@router.post("/chat", response_model=ChatResponse)
-```
-`response_model` 参数让 FastAPI 自动将返回结果按 `ChatResponse` 结构序列化，多余的字段会被过滤掉。
+### 4. WebSocket 实时通信（预留）
 
-### 配置管理
-`configs/` 目录下的 YAML 文件被加载为 Pydantic 对象：
-```python
-class ModelConfig(BaseModel):
-    default_provider: str
-    providers: dict[str, ProviderConfig]
-    routing: RoutingConfig
-```
-这样配置有类型提示，拼写错误会立即暴露。
+`WS /api/v1/chat/stream` — 长连接模式，先在聊天中发送"处理中"状态，再把 AI 回复推回去，为以后做逐字流式输出（像 ChatGPT 那样）做准备。
+
+### 5. 托管前端页面
+
+把 `chat.html` 挂载到 `/static/` 目录下，访问 `/` 自动跳转。用户打开网址就能直接用。
+
+### 6. 中间件：请求追踪 + 异常兜底
+
+每个请求自动分配 `trace_id`，记录到日志中；出了异常统一返回中文错误信息，不给用户看报错堆栈。
+
+### 7. 启动预热
+
+服务启动时自动加载所有工具、预热 LLM Provider、加载知识库——让第一个用户不用等。
 
 ---
 
-## 五、中间件做了什么？
+## 四、面试可能追问
 
-项目写了一个 `TraceMiddleware`（`app/api/middleware.py`），继承 `BaseHTTPMiddleware`：
+**Q：为什么用 FastAPI 而不用 Flask？**
+> FastAPI 原生支持 `async/await`（异步），本项目大量调用外部 API（DeepSeek），用异步等待时可以去处理别的请求，高并发下性能更好。Flask 默认是同步的。
 
-1. 每个请求进来时生成/提取 `trace_id`
-2. 记录请求方法、路径、状态码、耗时
-3. 异常时统一返回 500 + 中文错误信息
-4. 响应头中注入 `X-Trace-Id`，方便前端排查问题
+**Q：项目里哪里用了 async/await？**
+> `POST /chat` 接口用 `async def`；调用 `agent_graph.ainvoke()` 时用 `await` 挂起等待；调用 LLM API 也是异步的。
 
-```python
-class TraceMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        trace_id = request.headers.get("X-Trace-Id", generate_trace_id())
-        response = await call_next(request)
-        response.headers["X-Trace-Id"] = trace_id
-        return response
-```
-
----
-
-## 六、启动时做了什么？（lifespan）
-
-FastAPI 的 `lifespan` 是一个异步上下文管理器，在服务启动时自动执行：
-
-```python
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 启动时：
-    import app.tools          # 注册所有工具到 ToolRegistry
-    get_llm_provider("router")  # 预热 LLM Provider
-    knowledge_base_manager.load_all_domains()  # 加载知识库
-
-    yield  # 服务运行中...
-
-    # 关闭时：
-    logger.info("app.shutting_down")
-```
-
-面试时可以说："用 lifespan 做启动预热，把 LLM Provider 和知识库提前加载好，避免第一个用户请求时等待过久。"
-
----
-
-## 七、WebSocket 和普通 HTTP 的区别？为什么项目里两种都有？
-
-| | HTTP（`POST /chat`） | WebSocket（`WS /chat/stream`） |
-|---|---|---|
-| 连接方式 | 一次请求一次响应 | 建立后保持长连接 |
-| 适用场景 | 前端目前的实现 | 预留的流式推送能力 |
-| 优势 | 简单、无状态 | 可实时推送处理状态、流式输出 |
-
-项目目前主要用 HTTP，WebSocket 是预留接口——如果以后改成逐字流式输出（像 ChatGPT 那样），WebSocket 比 HTTP 轮询更合适。
-
----
-
-## 八、面试可能会问的延伸问题
-
-**Q：为什么用 FastAPI 而不是 Flask？**
-> FastAPI 原生支持 `async/await`，我们这个项目大量调用外部 API（DeepSeek、数据库），用异步可以避免阻塞其他请求。Flask 是同步的，高并发下性能差很多。
-
-**Q：async/await 在这个项目里具体用在哪里？**
-> - `agent_graph.ainvoke()` ——异步执行 Agent 链路
-> - `provider.chat()` ——异步调用 LLM API
-> - `session_store.add_message()` ——同步但轻量的 SQLite 操作，不会成为瓶颈
-
-**Q：Pydantic 的 model_dump() 是什么？**
-> 把 Pydantic 对象转成 Python 字典。比如 `ToolResult.model_dump()` 把工具执行结果转为 dict，方便存入 LangGraph 状态中。
+**Q：Pydantic 的好处？**
+> 不用手写校验。定义好 `ChatRequest`，字段类型、是否必填 Pydantic 全自动检查，不合法直接返回 422，既省代码又安全。
 
 **Q：项目怎么处理错误？**
-> 路由层 `try/except` 捕获异常返回 500；中间件兜底捕获未预料的异常；节点内部也有 `try/except`，LLM 调用失败时会降级到 fallback 回复。
+> 三层兜底：路由层 `try/except` → 中间件统一捕获 → Agent 节点内部 LLM 失败时走降级回复。
