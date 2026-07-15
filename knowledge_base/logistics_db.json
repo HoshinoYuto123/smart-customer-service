@@ -1,0 +1,263 @@
+[
+  {
+    "order_id": "ORD20240715001",
+    "user_phone": "138****6789",
+    "product": "无线蓝牙耳机 Pro",
+    "amount": 299.00,
+    "status": "配送中",
+    "logistics_company": "顺丰速运",
+    "tracking_number": "SF1234567890123",
+    "created_at": "2024-07-13 10:23:45",
+    "estimated_delivery": "2024-07-16",
+    "shipped_at": "2024-07-14 08:30:00",
+    "receiver_name": "张先生",
+    "receiver_address": "广东省深圳市南山区科技园路100号",
+    "tracking_history": [
+      {"time": "2024-07-13 10:30:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-14 08:30:00", "status": "包裹已揽收", "location": "深圳市南山区营业部"},
+      {"time": "2024-07-14 12:15:00", "status": "运输中", "location": "深圳分拣中心"},
+      {"time": "2024-07-14 22:40:00", "status": "已到达中转站", "location": "广州中转中心"},
+      {"time": "2024-07-15 06:20:00", "status": "运输中，发往目的地", "location": "广州中转中心"},
+      {"time": "2024-07-15 14:30:00", "status": "已到达派送网点", "location": "深圳市福田区派送站"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715002",
+    "user_phone": "139****1234",
+    "product": "4K显示器 27寸",
+    "amount": 2499.00,
+    "status": "已送达",
+    "logistics_company": "京东物流",
+    "tracking_number": "JD9876543210987",
+    "created_at": "2024-07-10 15:45:12",
+    "estimated_delivery": "2024-07-13",
+    "shipped_at": "2024-07-11 09:15:00",
+    "delivered_at": "2024-07-13 11:20:00",
+    "receiver_name": "李女士",
+    "receiver_address": "北京市朝阳区望京SOHO T1 15楼",
+    "tracking_history": [
+      {"time": "2024-07-10 15:50:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-11 09:15:00", "status": "包裹已揽收", "location": "北京大兴仓库"},
+      {"time": "2024-07-11 14:30:00", "status": "运输中", "location": "北京分拣中心"},
+      {"time": "2024-07-12 08:00:00", "status": "运输中", "location": "北京分拣中心"},
+      {"time": "2024-07-12 16:45:00", "status": "已到达派送网点", "location": "朝阳区望京营业部"},
+      {"time": "2024-07-13 09:30:00", "status": "派送中，快递员正在为您配送", "location": "朝阳区望京"},
+      {"time": "2024-07-13 11:20:00", "status": "已签收（本人签收）", "location": "朝阳区望京SOHO T1"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715003",
+    "user_phone": "136****5678",
+    "product": "智能音箱 Pro",
+    "amount": 599.00,
+    "status": "已发货",
+    "logistics_company": "中通快递",
+    "tracking_number": "ZTO2024071500555",
+    "created_at": "2024-07-14 20:10:33",
+    "estimated_delivery": "2024-07-17",
+    "shipped_at": "2024-07-15 07:00:00",
+    "receiver_name": "王先生",
+    "receiver_address": "上海市浦东新区张江高科技园区",
+    "tracking_history": [
+      {"time": "2024-07-14 20:15:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-15 07:00:00", "status": "包裹已揽收", "location": "上海浦东营业部"},
+      {"time": "2024-07-15 10:30:00", "status": "运输中", "location": "上海分拣中心"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715004",
+    "user_phone": "138****6789",
+    "product": "机械键盘 红轴",
+    "amount": 459.00,
+    "status": "待发货",
+    "logistics_company": "圆通速递",
+    "tracking_number": "",
+    "created_at": "2024-07-15 09:05:00",
+    "estimated_delivery": "2024-07-18",
+    "shipped_at": "",
+    "receiver_name": "张先生",
+    "receiver_address": "广东省深圳市南山区科技园路100号",
+    "tracking_history": [
+      {"time": "2024-07-15 09:05:00", "status": "订单已创建，等待发货", "location": "系统"},
+      {"time": "2024-07-15 09:10:00", "status": "商家正在备货中", "location": "仓库"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715005",
+    "user_phone": "137****8901",
+    "product": "便携充电宝 20000mAh",
+    "amount": 129.00,
+    "status": "配送中",
+    "logistics_company": "韵达快递",
+    "tracking_number": "YD2024071588899",
+    "created_at": "2024-07-12 14:20:00",
+    "estimated_delivery": "2024-07-16",
+    "shipped_at": "2024-07-13 11:00:00",
+    "receiver_name": "赵女士",
+    "receiver_address": "浙江省杭州市西湖区文三路478号",
+    "tracking_history": [
+      {"time": "2024-07-12 14:25:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-13 11:00:00", "status": "包裹已揽收", "location": "杭州西湖营业部"},
+      {"time": "2024-07-13 16:30:00", "status": "运输中", "location": "杭州分拣中心"},
+      {"time": "2024-07-14 03:00:00", "status": "已到达中转站", "location": "金华中转中心"},
+      {"time": "2024-07-14 22:00:00", "status": "运输中", "location": "金华中转中心"},
+      {"time": "2024-07-15 08:00:00", "status": "已到达派送网点", "location": "杭州西湖区派送站"},
+      {"time": "2024-07-15 08:45:00", "status": "派送中，快递员正在为您配送", "location": "杭州西湖区"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715006",
+    "user_phone": "135****2345",
+    "product": "智能音箱 Pro",
+    "amount": 599.00,
+    "status": "已签收",
+    "logistics_company": "EMS",
+    "tracking_number": "EMS123456789CN",
+    "created_at": "2024-07-08 11:30:00",
+    "estimated_delivery": "2024-07-12",
+    "shipped_at": "2024-07-09 09:00:00",
+    "delivered_at": "2024-07-12 15:30:00",
+    "receiver_name": "陈先生",
+    "receiver_address": "四川省成都市武侯区天府大道999号",
+    "tracking_history": [
+      {"time": "2024-07-08 11:35:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-09 09:00:00", "status": "包裹已揽收", "location": "成都武侯营业部"},
+      {"time": "2024-07-09 15:20:00", "status": "运输中", "location": "成都分拣中心"},
+      {"time": "2024-07-10 07:00:00", "status": "已到达中转站", "location": "重庆中转中心"},
+      {"time": "2024-07-11 18:00:00", "status": "运输中", "location": "重庆中转中心"},
+      {"time": "2024-07-12 08:30:00", "status": "已到达派送网点", "location": "成都武侯区派送站"},
+      {"time": "2024-07-12 14:00:00", "status": "派送中", "location": "成都武侯区"},
+      {"time": "2024-07-12 15:30:00", "status": "已签收（本人签收）", "location": "天府大道999号"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715007",
+    "user_phone": "138****6789",
+    "product": "无线蓝牙耳机 Pro",
+    "amount": 299.00,
+    "status": "派送中",
+    "logistics_company": "顺丰速运",
+    "tracking_number": "SF1234567890456",
+    "created_at": "2024-07-14 16:00:00",
+    "estimated_delivery": "2024-07-15",
+    "shipped_at": "2024-07-14 20:00:00",
+    "receiver_name": "张先生",
+    "receiver_address": "广东省深圳市南山区科技园路100号",
+    "tracking_history": [
+      {"time": "2024-07-14 16:05:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-14 20:00:00", "status": "包裹已揽收", "location": "深圳市南山区营业部"},
+      {"time": "2024-07-15 01:30:00", "status": "运输中", "location": "深圳分拣中心"},
+      {"time": "2024-07-15 07:00:00", "status": "已到达派送网点", "location": "深圳市南山区派送站"},
+      {"time": "2024-07-15 08:30:00", "status": "派送中，快递员张师傅正在为您配送，电话138****0000", "location": "深圳市南山区科技园"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715008",
+    "user_phone": "139****1234",
+    "product": "轻薄笔记本电脑 14寸",
+    "amount": 5999.00,
+    "status": "配送中",
+    "logistics_company": "顺丰速运",
+    "tracking_number": "SF1234567890789",
+    "created_at": "2024-07-14 10:00:00",
+    "estimated_delivery": "2024-07-16",
+    "shipped_at": "2024-07-14 15:00:00",
+    "receiver_name": "李女士",
+    "receiver_address": "北京市朝阳区望京SOHO T1 15楼",
+    "tracking_history": [
+      {"time": "2024-07-14 10:05:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-14 15:00:00", "status": "包裹已揽收", "location": "北京大兴仓库"},
+      {"time": "2024-07-14 19:30:00", "status": "运输中", "location": "北京分拣中心"},
+      {"time": "2024-07-15 03:00:00", "status": "已到达中转站，发往目的地", "location": "北京分拣中心"},
+      {"time": "2024-07-15 12:00:00", "status": "运输中", "location": "京津高速运输中"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715009",
+    "user_phone": "136****5678",
+    "product": "人体工学办公椅",
+    "amount": 1599.00,
+    "status": "运输中",
+    "logistics_company": "德邦物流",
+    "tracking_number": "DB2024071500123",
+    "created_at": "2024-07-13 08:30:00",
+    "estimated_delivery": "2024-07-17",
+    "shipped_at": "2024-07-13 14:00:00",
+    "receiver_name": "王先生",
+    "receiver_address": "上海市浦东新区张江高科技园区",
+    "tracking_history": [
+      {"time": "2024-07-13 08:35:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-13 14:00:00", "status": "大件包裹已揽收", "location": "佛山仓库"},
+      {"time": "2024-07-13 18:00:00", "status": "运输中", "location": "佛山分拣中心"},
+      {"time": "2024-07-14 10:00:00", "status": "已到达中转站", "location": "南昌中转中心"},
+      {"time": "2024-07-15 06:00:00", "status": "运输中，发往目的地", "location": "南昌中转中心"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715010",
+    "user_phone": "137****8901",
+    "product": "手机壳 防摔款",
+    "amount": 39.90,
+    "status": "已签收",
+    "logistics_company": "中通快递",
+    "tracking_number": "ZTO2024071077777",
+    "created_at": "2024-07-09 21:15:00",
+    "estimated_delivery": "2024-07-12",
+    "shipped_at": "2024-07-10 08:00:00",
+    "delivered_at": "2024-07-11 17:00:00",
+    "receiver_name": "赵女士",
+    "receiver_address": "浙江省杭州市西湖区文三路478号",
+    "tracking_history": [
+      {"time": "2024-07-09 21:20:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-10 08:00:00", "status": "包裹已揽收", "location": "义乌营业部"},
+      {"time": "2024-07-10 14:00:00", "status": "运输中", "location": "义乌分拣中心"},
+      {"time": "2024-07-11 06:00:00", "status": "已到达派送网点", "location": "杭州西湖区派送站"},
+      {"time": "2024-07-11 09:00:00", "status": "派送中", "location": "杭州西湖区"},
+      {"time": "2024-07-11 17:00:00", "status": "已签收（快递柜代收）", "location": "文三路478号丰巢柜"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715011",
+    "user_phone": "138****0001",
+    "product": "智能手表 GT4",
+    "amount": 1499.00,
+    "status": "异常",
+    "logistics_company": "顺丰速运",
+    "tracking_number": "SF1234567890999",
+    "created_at": "2024-07-11 09:00:00",
+    "estimated_delivery": "2024-07-14",
+    "shipped_at": "2024-07-11 16:00:00",
+    "receiver_name": "刘先生",
+    "receiver_address": "江苏省南京市鼓楼区中山路200号",
+    "tracking_history": [
+      {"time": "2024-07-11 09:05:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-11 16:00:00", "status": "包裹已揽收", "location": "深圳南山营业部"},
+      {"time": "2024-07-12 02:00:00", "status": "运输中", "location": "深圳分拣中心"},
+      {"time": "2024-07-12 18:00:00", "status": "已到达中转站", "location": "武汉中转中心"},
+      {"time": "2024-07-13 08:00:00", "status": "运输中", "location": "武汉中转中心"},
+      {"time": "2024-07-14 10:00:00", "status": "包裹异常：收件人电话无法接通，正在联系中", "location": "南京鼓楼区派送站"}
+    ]
+  },
+  {
+    "order_id": "ORD20240715012",
+    "user_phone": "136****9999",
+    "product": "厨房刀具套装",
+    "amount": 259.00,
+    "status": "退货中",
+    "logistics_company": "圆通速递",
+    "tracking_number": "YT2024071500444",
+    "created_at": "2024-07-10 13:00:00",
+    "estimated_delivery": "",
+    "shipped_at": "2024-07-10 17:00:00",
+    "receiver_name": "周女士",
+    "receiver_address": "湖北省武汉市洪山区珞喻路1037号",
+    "tracking_history": [
+      {"time": "2024-07-10 13:05:00", "status": "订单已创建", "location": "系统"},
+      {"time": "2024-07-10 17:00:00", "status": "包裹已揽收", "location": "武汉洪山营业部"},
+      {"time": "2024-07-11 09:00:00", "status": "已送达", "location": "珞喻路1037号"},
+      {"time": "2024-07-13 14:00:00", "status": "用户申请退货", "location": "系统"},
+      {"time": "2024-07-14 10:00:00", "status": "退货包裹已揽收", "location": "武汉洪山营业部"},
+      {"time": "2024-07-15 08:00:00", "status": "退货运输中", "location": "武汉分拣中心"}
+    ]
+  }
+]

@@ -1,0 +1,36 @@
+default_provider: deepseek
+
+providers:
+  deepseek:
+    model: deepseek-chat
+    api_key: ${DEEPSEEK_API_KEY}
+    base_url: https://api.deepseek.com/v1
+    timeout: 120
+    max_retries: 1
+  openai:
+    model: gpt-4o
+    api_key: ${OPENAI_API_KEY}
+    base_url: https://api.openai.com/v1
+    timeout: 15
+    max_retries: 3
+  claude:
+    model: claude-sonnet-4-20250514
+    api_key: ${ANTHROPIC_API_KEY}
+    timeout: 15
+    max_retries: 3
+  qwen:
+    model: qwen-max
+    api_key: ${DASHSCOPE_API_KEY}
+    timeout: 15
+    max_retries: 3
+  mock:
+    model: mock
+    api_key: ""
+    timeout: 1
+    max_retries: 0
+
+routing:
+  router: deepseek
+  clarify: deepseek
+  answer: deepseek
+  fallback: deepseek

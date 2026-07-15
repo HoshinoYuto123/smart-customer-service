@@ -1,0 +1,38 @@
+app:
+  name: "SCS-Agent"
+  version: "1.0.0"
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+
+agent:
+  max_clarify_rounds: 2
+  clarify_confidence_threshold: 0.6
+  max_tool_call_rounds: 5
+  llm_timeout: 15
+
+concurrency:
+  max_concurrent_llm_calls: 10
+  request_queue_max_size: 100
+
+session:
+  ttl_seconds: 3600
+  redis_url: ${REDIS_URL:redis://localhost:6379/0}
+
+circuit_breaker:
+  failure_threshold: 5
+  cooldown_seconds: 60
+  half_open_max_calls: 1
+
+retry:
+  llm_max_retries: 3
+  llm_base_delay: 1.0
+  tool_max_retries: 3
+  tool_delay: 1.0
+
+observability:
+  log_level: INFO
+  log_format: json
+  langsmith_enabled: false
+  langsmith_api_key: ${LANGSMITH_API_KEY:}
+  langsmith_project: scs-agent

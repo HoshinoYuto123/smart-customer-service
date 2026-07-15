@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能客服中心</title>
+    <style>
+        :root {
+            --brand: #FF6B35;
+            --brand-light: #FFF3ED;
+            --brand-dark: #E55A2B;
+            --bg: #F5F5F5;
+            --white: #FFFFFF;
+            --text: #333333;
+            --text-secondary: #999999;
+            --border: #F0F0F0;
+            --shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+            background: #F0F0F0;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-layout {
+            width: 100%; max-width: 1100px; height: 100vh;
+            display: flex; background: var(--white);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        @media (min-width: 768px) {
+            .app-layout { height: 92vh; border-radius: 16px; overflow: hidden; }
+        }
+
+        /* ── Sidebar ─────────────────────────────── */
+        .sidebar {
+            width: 270px; background: #1B1F2A; color: #B0B8C8;
+            display: flex; flex-direction: column; flex-shrink: 0;
+            user-select: none;
+        }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -280px; top: 0; bottom: 0; z-index: 100;
+                transition: left 0.3s; width: 280px; }
+            .sidebar.open { left: 0; box-shadow: 4px 0 20px rgba(0,0,0,0.3); }
+        }
+
+        .sidebar-brand {
+            padding: 20px 18px; border-bottom: 1px solid #2A2F3D;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sidebar-brand .logo {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--brand), #FF9A6C);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: #fff;
+        }
+        .sidebar-brand .name { font-size: 16px; font-weight: 600; color: #E8ECF2; }
+
+        .sidebar-action {
+            padding: 14px 18px; border-bottom: 1px solid #2A2F3D;
+        }
+        .sidebar-action button {
+            width: 100%; padding: 10px 0; border: 1.5px dashed #3A4055;
+            border-radius: 10px; background: transparent; color: #8B95AB;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+            font-family: inherit; display: flex; align-items: center;
+            justify-content: center; gap: 6px;
+        }
+        .sidebar-action button:hover {
+            border-color: var(--brand); color: var(--brand);
+            background: rgba(255,107,53,0.06);
+        }
+
+        .session-list { flex: 1; overflow-y: auto; padding: 8px 10px; }
+        .session-list .section-title {
+            font-size: 11px; color: #5A6275; padding: 10px 8px 6px;
+            text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+        }
+
+        .session-item {
+            padding: 10px 12px; border-radius: 10px; cursor: pointer;
+            margin-bottom: 2px; transition: all 0.15s;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .session-item:hover { background: #262B38; }
+        .session-item.active { background: #2A3040; }
+
+        .session-item .icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: #2A3040; display: flex; align-items: center;
+            justify-content: center; font-size: 14px; flex-shrink: 0;
+        }
+        .session-item.active .icon { background: rgba(255,107,53,0.15); }
+
+        .session-item .content { flex: 1; min-width: 0; }
+        .session-item .title {
+            font-size: 13px; color: #D0D7E2; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
+        }
+        .session-item .date {
+            font-size: 11px; color: #5A6275; margin-top: 2px;
+        }
+        .session-item .del-btn {
+            opacity: 0; background: none; border: none; color: #6B7280;
+            cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 6px;
+            transition: all 0.15s; flex-shrink: 0;
+        }
+        .session-item:hover .del-btn { opacity: 1; }
+        .session-item .del-btn:hover { background: rgba(220,53,69,0.2); color: #F87171; }
+
+        /* ── Chat ──────────────────────────────── */
+        .chat-container { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #FAFAFA; }
+
+        .chat-header {
+            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+            color: #fff; padding: 14px 20px; display: flex;
+            align-items: center; gap: 12px; flex-shrink: 0; position: relative;
+            box-shadow: 0 2px 8px rgba(255,107,53,0.15);
+        }
+        .chat-header .menu-btn {
+            display: none; background: none; border: none; color: #fff;
+            font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
+        }
+        @media (max-width: 768px) { .chat-header .menu-btn { display: block; } }
+
+        .chat-header .avatar {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: rgba(255,255,255,0.25); display: flex;
+            align-items: center; justify-content: center; font-size: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .chat-header .info h3 { font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
+        .chat-header .info span { font-size: 11px; opacity: 0.9; }
+        .chat-header .status-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #4ADE80;
+            display: inline-block; margin-right: 4px; animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
+        }
+
+        /* ── Messages ──────────────────────────── */
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 20px 16px;
+            display: flex; flex-direction: column; gap: 14px;
+            background: #F7F7F8;
+        }
+
+        .message { display: flex; gap: 8px; max-width: 82%; animation: msgIn 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message.bot { align-self: flex-start; }
+
+        .message .avatar-sm {
+            width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; margin-top: 2px;
+        }
+        .message.bot .avatar-sm { background: #FFF3ED; }
+        .message.user .avatar-sm { background: #F0F0F5; }
+
+        .message .body { display: flex; flex-direction: column; gap: 6px; }
+        .message .bubble {
+            padding: 12px 15px; font-size: 14.5px; line-height: 1.7;
+            word-break: break-word; position: relative;
+        }
+        .message.user .bubble {
+            background: linear-gradient(135deg, var(--brand), #FF8C5A);
+            color: #fff; border-radius: 16px 4px 16px 16px;
+        }
+        .message.bot .bubble {
+            background: #fff; color: #333;
+            border-radius: 4px 16px 16px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        .message.bot .bubble p { margin: 0 0 6px; }
+        .message.bot .bubble p:last-child { margin: 0; }
+        .message.bot .bubble strong {
+            color: var(--brand-dark); font-weight: 600;
+        }
+
+        /* ── Quick Replies ─────────────────────── */
+        .quick-replies {
+            display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0;
+            align-self: flex-start; max-width: 85%;
+        }
+        .quick-replies button {
+            padding: 8px 15px; border: 1px solid #FFD5C2; border-radius: 20px;
+            background: #fff; color: var(--brand-dark); cursor: pointer;
+            font-size: 13px; transition: all 0.2s; white-space: nowrap;
+            font-family: inherit; font-weight: 500;
+        }
+        .quick-replies button:hover {
+            background: var(--brand); color: #fff; border-color: var(--brand);
+            box-shadow: 0 2px 8px rgba(255,107,53,0.2);
+            transform: translateY(-1px);
+        }
+
+        /* ── Service Cards ─────────────────────── */
+        .service-cards {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+            padding: 4px 0; align-self: flex-start; max-width: 85%;
+        }
+        .service-card {
+            background: #fff; border: 1px solid #F0F0F0; border-radius: 12px;
+            padding: 14px; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .service-card:hover {
+            border-color: var(--brand); box-shadow: 0 4px 12px rgba(255,107,53,0.1);
+            transform: translateY(-2px);
+        }
+        .service-card .icon { font-size: 28px; }
+        .service-card .title { font-size: 13px; color: #555; font-weight: 500; }
+
+        /* ── Typing ────────────────────────────── */
+        .typing-indicator {
+            align-self: flex-start; display: flex; gap: 5px; align-items: center;
+            padding: 12px 16px; background: #fff; border-radius: 4px 16px 16px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .typing-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: #D0D0D0;
+            animation: dotBounce 1.4s infinite both;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* ── Input Bar ─────────────────────────── */
+        .chat-footer {
+            padding: 12px 16px 16px; background: #fff;
+            border-top: 1px solid #F0F0F0; flex-shrink: 0;
+        }
+        .input-row {
+            display: flex; gap: 10px; align-items: center;
+            background: #F5F6F8; border-radius: 24px; padding: 4px 4px 4px 16px;
+            border: 1.5px solid transparent; transition: all 0.2s;
+        }
+        .input-row:focus-within {
+            border-color: var(--brand); background: #fff;
+            box-shadow: 0 0 0 3px rgba(255,107,53,0.08);
+        }
+        .input-row input {
+            flex: 1; border: none; background: transparent; padding: 10px 0;
+            font-size: 14.5px; outline: none; font-family: inherit; color: #333;
+        }
+        .input-row input::placeholder { color: #B0B0B0; }
+        .input-row .send-btn {
+            width: 38px; height: 38px; border-radius: 50%; border: none;
+            background: linear-gradient(135deg, var(--brand), #FF8C5A);
+            color: #fff; cursor: pointer; font-size: 18px; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; box-shadow: 0 2px 6px rgba(255,107,53,0.25);
+        }
+        .input-row .send-btn:hover { transform: scale(1.06); box-shadow: 0 4px 12px rgba(255,107,53,0.35); }
+        .input-row .send-btn:disabled { opacity: 0.4; transform: none; box-shadow: none; cursor: not-allowed; }
+
+        /* ── Misc ──────────────────────────────── */
+        .transfer-notice {
+            background: #FFF9F0; border: 1px solid #FFE0B2;
+            border-radius: 12px; padding: 10px 16px; font-size: 13px;
+            color: #B87A20; align-self: center; text-align: center;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .empty-state { text-align: center; color: #6B7280; padding: 30px 16px; font-size: 13px; }
+
+        .overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            z-index: 99;
+        }
+        @media (max-width: 768px) { .overlay.show { display: block; } }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- ── Overlay (mobile) ── -->
+        <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+        <!-- ── Sidebar ── -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="logo">🎧</div>
+                <div class="name">消息中心</div>
+            </div>
+            <div class="sidebar-action">
+                <button onclick="newChat()">💬 新建对话</button>
+            </div>
+            <div class="session-list" id="sessionList">
+                <div class="section-title">最近消息</div>
+                <div class="empty-state">暂无历史消息</div>
+            </div>
+        </div>
+
+        <!-- ── Chat Area ── -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <button class="menu-btn" onclick="openSidebar()">☰</button>
+                <div class="avatar">🎧</div>
+                <div class="info">
+                    <h3>智能客服中心</h3>
+                    <span><span class="status-dot"></span>在线 · 7×24 小时</span>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="messages">
+                <!-- Welcome -->
+                <div class="message bot">
+                    <div class="avatar-sm">🎧</div>
+                    <div class="body">
+                        <div class="bubble">
+                            <p>您好，欢迎来到智能客服中心！👋</p>
+                            <p>我是您的专属客服助手，请问有什么可以帮您的？</p>
+                        </div>
+                        <div class="service-cards">
+                            <div class="service-card" onclick="sendQuickReply('如何查询订单物流状态？')">
+                                <span class="icon">📦</span>
+                                <span class="title">物流查询</span>
+                            </div>
+                            <div class="service-card" onclick="sendQuickReply('怎么申请退货退款？')">
+                                <span class="icon">↩️</span>
+                                <span class="title">退货退款</span>
+                            </div>
+                            <div class="service-card" onclick="sendQuickReply('支付失败怎么办？')">
+                                <span class="icon">💳</span>
+                                <span class="title">支付问题</span>
+                            </div>
+                            <div class="service-card" onclick="sendQuickReply('如何修改账户密码？')">
+                                <span class="icon">🔒</span>
+                                <span class="title">账户安全</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-footer">
+                <div class="input-row">
+                    <input type="text" id="userInput" placeholder="输入您的问题..." autofocus
+                           onkeydown="if(event.key==='Enter') sendMessage()">
+                    <button class="send-btn" onclick="sendMessage()" id="sendBtn">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──
+        let currentSessionId = localStorage.getItem('scs_session_id') || newSessionId();
+        const API_BASE = '/api/v1';
+        let isWaiting = false;
+
+        function newSessionId() {
+            const id = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            localStorage.setItem('scs_session_id', id);
+            return id;
+        }
+
+        // ── Sidebar ──
+        function openSidebar() {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('overlay').classList.add('show');
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.remove('show');
+        }
+
+        async function loadSessionList() {
+            try {
+                const r = await fetch(API_BASE + '/sessions');
+                const data = await r.json();
+                const list = document.getElementById('sessionList');
+                if (!data.sessions || data.sessions.length === 0) {
+                    list.innerHTML = '<div class="section-title">最近消息</div><div class="empty-state">暂无历史消息</div>';
+                    return;
+                }
+                list.innerHTML = '<div class="section-title">最近消息</div>' + data.sessions.map(s => {
+                    const d = new Date(s.updated_at);
+                    const now = new Date();
+                    const diff = now - d;
+                    let dateStr;
+                    if (diff < 3600000) dateStr = Math.round(diff/60000) + '分钟前';
+                    else if (diff < 86400000) dateStr = d.toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+                    else dateStr = d.toLocaleDateString('zh-CN', {month:'short',day:'numeric'});
+
+                    const active = s.id === currentSessionId ? ' active' : '';
+                    const icon = s.title.includes('物流') ? '📦' : s.title.includes('退款') ? '💰' : s.title.includes('密码') ? '🔑' : '💬';
+                    return `<div class="session-item${active}" onclick="switchSession('${s.id}')">
+                        <div class="icon">${icon}</div>
+                        <div class="content">
+                            <div class="title">${escHtml(s.title || '新对话')}</div>
+                            <div class="date">${dateStr} · ${s.msg_count}条消息</div>
+                        </div>
+                        <button class="del-btn" onclick="event.stopPropagation();delSession('${s.id}')">✕</button>
+                    </div>`;
+                }).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        async function switchSession(id) {
+            if (id === currentSessionId) return;
+            currentSessionId = id;
+            localStorage.setItem('scs_session_id', id);
+            document.getElementById('messages').innerHTML = '';
+            try {
+                const r = await fetch(API_BASE + '/sessions/' + id);
+                if (!r.ok) { newChat(); return; }
+                const data = await r.json();
+                data.messages.forEach(m => addMessage(m.role, m.content, null, null));
+                loadSessionList();
+                closeSidebar();
+            } catch(e) { newChat(); }
+        }
+
+        function newChat() {
+            currentSessionId = newSessionId();
+            document.getElementById('messages').innerHTML = `
+                <div class="message bot">
+                    <div class="avatar-sm">🎧</div>
+                    <div class="body">
+                        <div class="bubble">
+                            <p>您好，欢迎来到智能客服中心！👋</p>
+                            <p>我是您的专属客服助手，请问有什么可以帮您的？</p>
+                        </div>
+                        <div class="service-cards">
+                            <div class="service-card" onclick="sendQuickReply('如何查询订单物流状态？')">
+                                <span class="icon">📦</span><span class="title">物流查询</span>
+                            </div>
+                            <div class="service-card" onclick="sendQuickReply('怎么申请退货退款？')">
+                                <span class="icon">↩️</span><span class="title">退货退款</span>
+                            </div>
+                            <div class="service-card" onclick="sendQuickReply('支付失败怎么办？')">
+                                <span class="icon">💳</span><span class="title">支付问题</span>
+                            </div>
+                            <div class="service-card" onclick="sendQuickReply('如何修改账户密码？')">
+                                <span class="icon">🔒</span><span class="title">账户安全</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            loadSessionList();
+        }
+
+        async function delSession(id) {
+            if (!confirm('确定删除这条会话吗？')) return;
+            await fetch(API_BASE + '/sessions/' + id, { method: 'DELETE' });
+            if (id === currentSessionId) newChat();
+            else loadSessionList();
+        }
+
+        // ── Chat ──
+        function scrollBottom() {
+            const el = document.getElementById('messages');
+            el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        }
+
+        function formatText(text) {
+            let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html = html.replace(/\n\n+/g, '</p><p>');
+            html = html.replace(/\n/g, '<br>');
+            html = '<p>' + html + '</p>';
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            return html;
+        }
+
+        function addMessage(role, text, quickReplies, action) {
+            const container = document.getElementById('messages');
+            const typing = container.querySelector('.typing-indicator');
+            if (typing) typing.remove();
+
+            if (action === 'transfer_human') {
+                const notice = document.createElement('div');
+                notice.className = 'transfer-notice';
+                notice.innerHTML = '🔔 正在为您转接人工客服，请稍候...';
+                container.appendChild(notice);
+            }
+
+            const div = document.createElement('div');
+            div.className = 'message ' + (role === 'user' ? 'user' : 'bot');
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar-sm';
+            avatar.textContent = role === 'user' ? '👤' : '🎧';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'body';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerHTML = formatText(text);
+            wrapper.appendChild(bubble);
+
+            if (quickReplies && quickReplies.length > 0) {
+                const qrDiv = document.createElement('div');
+                qrDiv.className = 'quick-replies';
+                quickReplies.forEach(qr => {
+                    const btn = document.createElement('button');
+                    btn.textContent = qr.label || qr.value;
+                    btn.onclick = () => sendQuickReply(qr.value || qr.label);
+                    qrDiv.appendChild(btn);
+                });
+                wrapper.appendChild(qrDiv);
+            }
+
+            div.appendChild(avatar);
+            div.appendChild(wrapper);
+            container.appendChild(div);
+            scrollBottom();
+        }
+
+        function showTyping() {
+            const container = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = 'typing-indicator';
+            div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            container.appendChild(div);
+            scrollBottom();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text || isWaiting) return;
+
+            input.value = '';
+            isWaiting = true;
+            document.getElementById('sendBtn').disabled = true;
+            addMessage('user', text);
+            showTyping();
+
+            try {
+                const resp = await fetch(API_BASE + '/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: currentSessionId, message: text, context: { user_id: 'web_user', channel: 'web' } })
+                });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    addMessage('bot', '抱歉，请求失败：' + (err.detail || '未知错误'));
+                    return;
+                }
+                const data = await resp.json();
+                addMessage('bot', data.response.text, data.response.quick_replies, data.response.action);
+                loadSessionList();
+            } catch (e) {
+                addMessage('bot', '网络连接失败，请检查服务是否正常运行。');
+            } finally {
+                isWaiting = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('userInput').focus();
+            }
+        }
+
+        function sendQuickReply(text) {
+            document.getElementById('userInput').value = text;
+            sendMessage();
+        }
+
+        // ── Init ──
+        loadSessionList();
+        document.getElementById('userInput').focus();
+    </script>
+</body>
+</html>

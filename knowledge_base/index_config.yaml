@@ -1,0 +1,23 @@
+embedding:
+  model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+  dimension: 384
+
+chromadb:
+  persist_directory: ./chroma_data
+  collection_name: scs_knowledge_base
+
+retrieval:
+  vector_top_k: 20
+  bm25_top_k: 10
+  rerank_top_k: 5
+  similarity_threshold: 0.5
+
+domains:
+  - account
+  - payment
+  - order
+  - after_sale
+
+hot_reload:
+  enabled: true
+  watch_interval_seconds: 30

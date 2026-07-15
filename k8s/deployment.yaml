@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scs-agent
+  labels:
+    app: scs-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: scs-agent
+  template:
+    metadata:
+      labels:
+        app: scs-agent
+    spec:
+      containers:
+      - name: scs-agent
+        image: scs-agent:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: REDIS_URL
+          value: "redis://redis-service:6379/0"
+        - name: DEEPSEEK_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: scs-agent-secrets
+              key: deepseek_api_key
+              optional: true
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: scs-agent-secrets
+              key: openai_api_key
+              optional: true
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: scs-agent-secrets
+              key: anthropic_api_key
+              optional: true
+        - name: DASHSCOPE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: scs-agent-secrets
+              key: dashscope_api_key
+              optional: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: chroma-data
+          mountPath: /app/chroma_data
+      volumes:
+      - name: chroma-data
+        persistentVolumeClaim:
+          claimName: chroma-data-pvc

@@ -1,0 +1,32 @@
+tools:
+  faq_search:
+    enabled: true
+    timeout: 5
+    fallback_message: "抱歉，知识库暂时不可用，请稍后再试。"
+
+  query_order:
+    enabled: true
+    timeout: 5
+    base_url: ${ORDER_API_URL:http://localhost:8001}
+    fallback_message: "订单系统暂时不可用，已为您创建工单跟进。"
+
+  query_account:
+    enabled: true
+    timeout: 5
+    base_url: ${ACCOUNT_API_URL:http://localhost:8002}
+    fallback_message: "账户系统暂时不可用，已为您创建工单跟进。"
+
+  create_ticket:
+    enabled: true
+    timeout: 5
+    base_url: ${TICKET_API_URL:http://localhost:8003}
+
+  transfer_human:
+    enabled: true
+    timeout: 5
+    queue_name: "human_transfer"
+
+  policy_search:
+    enabled: true
+    timeout: 5
+    fallback_message: "政策检索暂时不可用，请参考常见问题。"

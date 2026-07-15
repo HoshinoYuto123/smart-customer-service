@@ -1,0 +1,9 @@
+current_versions:
+  router_prompt: "1.0"
+  clarify_prompt: "1.0"
+  answer_prompt: "1.0"
+  fallback_prompt: "1.0"
+
+ab_test:
+  enabled: false
+  experiments: []

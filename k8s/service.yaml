@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scs-agent-service
+  labels:
+    app: scs-agent
+spec:
+  type: ClusterIP
+  selector:
+    app: scs-agent
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http

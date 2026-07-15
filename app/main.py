@@ -1,0 +1,97 @@
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from starlette.responses import RedirectResponse
+
+from app.api.middleware import TraceMiddleware
+from app.api.routes import router as api_router
+from app.api.websocket import router as ws_router
+from app.core.config import get_app_config
+from app.core.observability import get_logger
+
+logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Warm up providers and knowledge base on startup."""
+    logger.info("app.starting", version=get_app_config().app.version)
+
+    # Import all tool modules to register them
+    try:
+        import app.tools  # noqa: F401
+        from app.tools.registry import tool_registry
+        logger.info("tools.loaded", count=len(tool_registry.list_names()))
+    except Exception as e:
+        logger.warning("tools.load_failed", error=str(e))
+
+    # Pre-warm LLM providers
+    try:
+        from app.core.di import get_llm_provider
+        get_llm_provider("router")
+        get_llm_provider("answer")
+        logger.info("providers.warmed")
+    except Exception as e:
+        logger.warning("providers.warmup_failed", error=str(e))
+
+    # Pre-load knowledge base
+    try:
+        from app.rag.knowledge_base import knowledge_base_manager
+        knowledge_base_manager.load_all_domains()
+        logger.info("knowledge_base.loaded")
+    except Exception as e:
+        logger.warning("knowledge_base.load_failed", error=str(e))
+
+    yield
+
+    logger.info("app.shutting_down")
+
+
+def create_app() -> FastAPI:
+    config = get_app_config()
+
+    app = FastAPI(
+        title=config.app.name,
+        version=config.app.version,
+        lifespan=lifespan,
+        docs_url="/docs",
+        redoc_url="/redoc",
+    )
+
+    # Middleware
+    app.add_middleware(TraceMiddleware)
+
+    # Static files
+    import os
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+    # Root redirect to chat UI
+    @app.get("/")
+    async def root():
+        return RedirectResponse(url="/static/chat.html")
+
+    # Routes
+    app.include_router(api_router)
+    app.include_router(ws_router)
+
+    return app
+
+
+app = create_app()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    config = get_app_config()
+    uvicorn.run(
+        "app.main:app",
+        host=config.app.host,
+        port=config.app.port,
+        reload=config.app.debug,
+        log_level=config.observability.log_level.lower(),
+    )
