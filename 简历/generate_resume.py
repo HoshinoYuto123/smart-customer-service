@@ -95,7 +95,7 @@ def add_sub_info(text):
 # ═══════════════════════════════════════
 add_title('张 宇 辰', 20)
 add_info('电话：138-xxxx-6789  |  邮箱：zhangyuchen@example.com  |  现居：广东省深圳市')
-add_info('江西财经大学 · 软件工程 · 本科（2027届）  |  GitHub：github.com/zhangyuchen')
+add_info('江西财经大学 · 软件工程 · 本科（2027届）  |  GitHub：github.com/HoshinoYuto123')
 
 # ═══════════════════════════════════════
 # 求职意向
