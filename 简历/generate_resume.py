@@ -119,7 +119,7 @@ add_bullet('工具与部署：有 Office 办公软件使用经验；了解 FastA
 add_section('核心项目经历')
 
 add_sub('SCS-Agent — 智能客服 Agent 系统（VibeCoding 实践）')
-add_sub_info('技术栈：Python, LangGraph, FastAPI, ChromaDB, DeepSeek API  |  GitHub 开源，已部署上线')
+add_sub_info('技术栈：Python, LangGraph, FastAPI, ChromaDB, DeepSeek API  |  GitHub：github.com/HoshinoYuto123/smart-customer-service  |  已部署上线')
 add_bullet('使用 Claude Code 进行 VibeCoding 辅助开发，通过自然语言描述需求、拆解任务，由 AI 协助完成代码生成与调试，完成从 0 到 1 的项目构建。')
 add_bullet('基于 LangChain / LangGraph 框架搭建多节点 Agent 状态机（澄清 → 路由 → 检索执行 → 回复 → 降级），实现多轮对话、反问澄清与工具调用。')
 add_bullet('构建 FAQ 知识库（4 个业务域 × 40 条问答）与物流信息数据库（12 条记录），实现基础的 RAG 检索问答，支持向量语义搜索与关键词匹配。')
