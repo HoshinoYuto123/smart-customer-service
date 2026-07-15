@@ -24,3 +24,5 @@ Thumbs.db
 *.log
 .pytest_cache/
 .claude/
+简历/unpacked/
+简历/简历.docx
