@@ -23,3 +23,4 @@ Thumbs.db
 # Temp
 *.log
 .pytest_cache/
+.claude/
