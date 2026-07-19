@@ -1,11 +1,11 @@
 """Mock create-ticket tool – generates a support ticket ID."""
 
-import random
 import uuid
 from datetime import datetime
 
 from app.agent.types import ToolResult
 from app.tools.registry import tool_registry
+from app.core.config import get_app_config
 
 _TICKET_PRIORITIES = ["低", "中", "高", "紧急"]
 _TICKET_CATEGORIES = [
@@ -49,6 +49,12 @@ _TICKET_CATEGORIES = [
 )
 async def create_ticket(params: dict) -> ToolResult:
     """Create a support ticket and return the ticket ID."""
+    if get_app_config().app.mode != "demo":
+        return ToolResult(
+            tool_name="create_ticket",
+            success=False,
+            error_message="生产环境工单适配器尚未配置",
+        )
     title = params.get("title", "").strip()
     description = params.get("description", "").strip()
     priority = params.get("priority", "中")
@@ -60,9 +66,6 @@ async def create_ticket(params: dict) -> ToolResult:
             success=False,
             error_message="工单标题不能为空",
         )
-
-    import asyncio
-    await asyncio.sleep(random.uniform(0.1, 0.3))
 
     ticket_id = f"TK{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
 
@@ -77,5 +80,6 @@ async def create_ticket(params: dict) -> ToolResult:
             "status": "待处理",
             "created_at": datetime.now().isoformat(),
             "estimated_response_time": "2小时内",
+            "is_demo_data": True,
         },
     )

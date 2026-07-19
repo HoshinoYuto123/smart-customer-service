@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 from typing import Optional
 
 from app.core.config import get_index_config
@@ -26,9 +27,16 @@ class BM25Scorer:
         self._N: int = 0
 
     def _tokenize(self, text: str) -> list[str]:
-        """Simple whitespace + punctuation tokenizer."""
+        """Tokenize Latin words and Chinese unigrams/bigrams."""
         import re
-        return re.findall(r"[\w一-鿿]+", text.lower())
+        lowered = text.lower()
+        latin = re.findall(r"[a-z0-9_]+", lowered)
+        chinese_runs = re.findall(r"[一-鿿]+", lowered)
+        chinese: list[str] = []
+        for run in chinese_runs:
+            chinese.extend(run)
+            chinese.extend(run[i:i + 2] for i in range(len(run) - 1))
+        return latin + chinese
 
     def index(self, documents: list[dict]) -> None:
         """Build BM25 index from a list of document dicts (each has 'question', 'answer')."""
@@ -126,22 +134,28 @@ class HybridRetriever:
         await self._ensure_services()
 
         # ── 1. Vector search via ChromaDB ──────────────────────
-        query_embedding = await self._embedding_service.embed_query(query)
         collection = self._indexer._get_collection()
 
         where_filter = None
         if domain:
             where_filter = {"domain": domain}
 
-        vector_results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=self._config.retrieval.vector_top_k,
-            where=where_filter,
-            include=["documents", "metadatas", "distances"],
-        )
+        vector_results: dict = {"ids": [[]], "distances": [[]]}
+        if self._embedding_service.available:
+            query_embedding = await self._embedding_service.embed_query(query)
+            vector_results = await asyncio.to_thread(
+                collection.query,
+                query_embeddings=[query_embedding],
+                n_results=self._config.retrieval.vector_top_k,
+                where=where_filter,
+                include=["documents", "metadatas", "distances"],
+            )
+        else:
+            logger.warning("Vector retrieval disabled: embedding model unavailable")
 
         # ── 2. Fetch all documents for BM25 (may be cached in production) ──
-        all_items = collection.get(
+        all_items = await asyncio.to_thread(
+            collection.get,
             where=where_filter,
             include=["documents", "metadatas"],
         )
@@ -171,13 +185,15 @@ class HybridRetriever:
                 distance = vector_results["distances"][0][rank] if vector_results.get("distances") else 1.0
                 # Convert cosine distance to similarity score
                 sim_score = 1.0 - distance
-                rrf_scores[doc_id] = self._rrf_score(rank + 1, extra=sim_score)
+                if sim_score >= self._config.retrieval.similarity_threshold:
+                    rrf_scores[doc_id] = self._rrf_score(rank + 1, extra=sim_score)
 
         # BM25 rank scores
+        max_bm25 = max((score for _, score in bm25_hits), default=1.0)
         for rank, (doc_idx, bm25_score) in enumerate(bm25_hits):
             doc_id = all_docs[doc_idx]["id"]
             existing = rrf_scores.get(doc_id, 0.0)
-            rrf_scores[doc_id] = existing + self._rrf_score(rank + 1, extra=bm25_score)
+            rrf_scores[doc_id] = existing + self._rrf_score(rank + 1, extra=bm25_score / max_bm25)
 
         # ── 5. Build result list ───────────────────────────────
         doc_map = {d["id"]: d for d in all_docs}
@@ -194,6 +210,10 @@ class HybridRetriever:
             results.append(doc_copy)
 
         return results
+
+    async def search(self, query: str, domain: str | None = None, top_k: int = 20) -> list[dict]:
+        """Compatibility alias; new callers should use ``retrieve``."""
+        return await self.retrieve(query=query, domain=domain, top_k=top_k)
 
     @staticmethod
     def _rrf_score(rank: int, extra: float = 0.0) -> float:

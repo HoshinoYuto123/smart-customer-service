@@ -42,6 +42,7 @@ class CircuitBreaker:
         failure_threshold: int | None = None,
         cooldown_seconds: float | None = None,
         half_open_max_calls: int | None = None,
+        failure_predicate: Callable[[Exception], bool] | None = None,
     ) -> None:
         config = get_app_config().circuit_breaker
 
@@ -49,6 +50,7 @@ class CircuitBreaker:
         self.failure_threshold = failure_threshold or config.failure_threshold
         self.cooldown_seconds = cooldown_seconds or config.cooldown_seconds
         self.half_open_max_calls = half_open_max_calls or config.half_open_max_calls
+        self.failure_predicate = failure_predicate
 
         self.state = CircuitState.CLOSED
         self.failure_count = 0
@@ -90,8 +92,12 @@ class CircuitBreaker:
             result = await func(*args, **kwargs)
             await self._on_success()
             return result
-        except Exception:
-            await self._on_failure()
+        except Exception as exc:
+            if self.failure_predicate is None or self.failure_predicate(exc):
+                await self._on_failure()
+            else:
+                # A validation/client error proves the dependency is reachable.
+                await self._on_success()
             raise
 
     # ── Async context manager ─────────────────────────────────────

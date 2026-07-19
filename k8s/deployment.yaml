@@ -5,7 +5,8 @@ metadata:
   labels:
     app: scs-agent
 spec:
-  replicas: 2
+  # Local SQLite sessions require a single replica until external storage is configured.
+  replicas: 1
   selector:
     matchLabels:
       app: scs-agent
@@ -14,14 +15,32 @@ spec:
       labels:
         app: scs-agent
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
       - name: scs-agent
         image: scs-agent:latest
         imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
         ports:
         - containerPort: 8000
           name: http
         env:
+        - name: APP_MODE
+          value: "production"
+        - name: AUTH_COOKIE_SECURE
+          value: "true"
+        - name: AUTH_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: scs-agent-secrets
+              key: auth_secret
+        # Remove this only when the embedding model is baked into the image.
+        - name: SKIP_EMBEDDING_MODEL
+          value: "1"
         - name: REDIS_URL
           value: "redis://redis-service:6379/0"
         - name: DEEPSEEK_API_KEY
@@ -57,20 +76,25 @@ spec:
             cpu: "2000m"
         livenessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /api/v1/health/live
             port: 8000
           initialDelaySeconds: 10
           periodSeconds: 15
         readinessProbe:
           httpGet:
-            path: /api/v1/health
+            path: /api/v1/health/ready
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10
         volumeMounts:
         - name: chroma-data
           mountPath: /app/chroma_data
+        - name: session-data
+          mountPath: /app/data
       volumes:
       - name: chroma-data
         persistentVolumeClaim:
           claimName: chroma-data-pvc
+      - name: session-data
+        persistentVolumeClaim:
+          claimName: session-data-pvc

@@ -24,13 +24,35 @@ _DOMAIN_KEYWORDS = {
 }
 
 
+def _infer_tools(user_input: str, domain: str) -> list[str]:
+    """Choose safe deterministic tools when the model did not return a plan."""
+    tools = ["faq_search"]
+    if any(word in user_input for word in ["政策", "规则", "时效", "积分"]):
+        tools.append("policy_search")
+    if domain == "order" and (
+        re.search(r"ORD\d{6,}|1[3-9]\d{9}", user_input, re.IGNORECASE)
+        or any(word in user_input for word in ["查询", "查一下", "物流", "快递到", "订单状态"])
+    ):
+        tools.append("query_order")
+    if domain == "account" and (
+        re.search(r"U\d{6,}|1[3-9]\d{9}", user_input, re.IGNORECASE)
+        and any(word in user_input for word in ["查询", "余额", "积分", "会员", "账户状态"])
+    ):
+        tools.append("query_account")
+    if any(word in user_input for word in ["创建工单", "提交工单", "生成工单"]):
+        tools.append("create_ticket")
+    if any(word in user_input for word in ["转人工", "人工客服", "人工处理"]):
+        tools.append("transfer_human")
+    return list(dict.fromkeys(tools))
+
+
 def _layer1_coarse_router(user_input: str) -> dict[str, float]:
     """Layer 1: Fast keyword-based coarse classification."""
     import re
     scores = {}
     for domain, keywords in _DOMAIN_KEYWORDS.items():
-        score = sum(1 for kw in keywords if kw in user_input)
-        scores[domain] = min(score / max(len(keywords), 1), 1.0)
+        matches = sum(1 for kw in keywords if kw in user_input)
+        scores[domain] = min(matches * 0.35, 1.0)
     # Boost: order ID pattern (ORD + digits) strongly indicates order domain
     if re.search(r'ORD\d{6,}', user_input, re.IGNORECASE):
         scores["order"] = max(scores.get("order", 0), 0.9)
@@ -41,8 +63,8 @@ def _layer1_coarse_router(user_input: str) -> dict[str, float]:
     return scores
 
 
-async def _layer2_rag_router(user_input: str, domain_scores: dict[str, float]) -> list[dict]:
-    """Layer 2: RAG-based retrieval of domain summaries."""
+async def _layer2_summary_router(user_input: str, domain_scores: dict[str, float]) -> list[dict]:
+    """Layer 2: attach curated domain summaries to ranked rule candidates."""
     try:
         from app.rag.knowledge_base import knowledge_base_manager
 
@@ -75,32 +97,24 @@ async def _layer2_rag_router(user_input: str, domain_scores: dict[str, float]) -
 
 
 async def router_node(state: AgentState) -> dict:
-    """Three-layer routing: coarse rules -> RAG domain summaries -> LLM fine routing."""
+    """Three-layer routing: coarse rules -> domain summaries -> LLM fine routing."""
     user_input = state.get("user_input", "")
     session_id = state.get("session_id", "")
     trace_id = get_trace_id()
 
-    logger.info("router.start", input=user_input[:100], trace_id=trace_id)
+    logger.info("router.start", input_length=len(user_input), trace_id=trace_id)
 
     # Layer 1: Coarse keyword routing
     domain_scores = _layer1_coarse_router(user_input)
     logger.info("router.layer1", scores=domain_scores)
 
-    # Layer 2: RAG-based domain summary retrieval
-    candidates = await _layer2_rag_router(user_input, domain_scores)
+    # Layer 2: enrich candidates with curated domain summaries
+    candidates = await _layer2_summary_router(user_input, domain_scores)
     logger.info("router.layer2", domains=[c["domain"] for c in candidates])
 
     # Layer 3: LLM fine routing (only if multiple candidates or low confidence)
     best_domain = max(domain_scores, key=domain_scores.get) if domain_scores else "global"
     best_score = domain_scores.get(best_domain, 0)
-
-    # Domain-based default tool suggestions (used when skipping LLM router)
-    _DOMAIN_DEFAULT_TOOLS = {
-        "account": ["faq_search", "query_account"],
-        "payment": ["faq_search"],
-        "order": ["faq_search", "query_order"],
-        "after_sale": ["faq_search", "create_ticket"],
-    }
 
     if best_score > 0.3 and len([c for c in candidates if c["score"] > 0.3]) <= 1:
         # High confidence single domain - skip LLM
@@ -108,7 +122,7 @@ async def router_node(state: AgentState) -> dict:
             domain=best_domain,
             sub_intent="",
             confidence=best_score,
-            suggested_tools=_DOMAIN_DEFAULT_TOOLS.get(best_domain, ["faq_search"]),
+            suggested_tools=_infer_tools(user_input, best_domain),
             reasoning=f"关键词匹配: {best_domain}",
             layer1_result=best_domain,
             layer2_candidates=candidates,
@@ -118,27 +132,19 @@ async def router_node(state: AgentState) -> dict:
         # Use LLM for fine routing
         route_decision = await _layer3_llm_router(user_input, candidates, session_id)
 
-    # Always ensure domain default tools are included
-    _DOMAIN_DEFAULT_TOOLS = {
-        "account": ["faq_search", "query_account"],
-        "payment": ["faq_search"],
-        "order": ["faq_search", "query_order"],
-        "after_sale": ["faq_search", "create_ticket"],
-    }
-    default_tools = _DOMAIN_DEFAULT_TOOLS.get(route_decision.domain, ["faq_search"])
+    # Ensure a conservative deterministic plan exists without executing every
+    # tool associated with a domain.
+    default_tools = _infer_tools(user_input, route_decision.domain)
     existing = set(route_decision.suggested_tools)
     for t in default_tools:
         if t not in existing:
             route_decision.suggested_tools.append(t)
 
-    # Store result
-    session_mgr = get_session_manager()
-    await session_mgr.set_domain(session_id, route_decision.domain)
-
     logger.info("router.decision", domain=route_decision.domain, confidence=route_decision.confidence)
 
     return {
         "router_result": route_decision.model_dump(),
+        "tool_plan": route_decision.tool_plan,
         "router_trace": [
             {"layer": "coarse", "scores": domain_scores},
             {"layer": "rag", "candidates": candidates},
@@ -163,16 +169,18 @@ async def _layer3_llm_router(user_input: str, candidates: list[dict], session_id
             for t in tool_registry.list_all()
         )
 
-        prompt = prompt_manager.render("router_prompt", {
-            "user_input": user_input,
-            "chat_history": "",
-            "domain_summaries": domain_summaries,
-            "available_tools": available_tools,
-        })
+        prompt = prompt_manager.render("router_prompt", {})
 
         messages = [
             Message(role="system", content=prompt),
-            Message(role="user", content=user_input),
+            Message(
+                role="user",
+                content=(
+                    f"<domain_summaries>\n{domain_summaries}\n</domain_summaries>\n\n"
+                    f"<available_tools>\n{available_tools}\n</available_tools>\n\n"
+                    f"<user_question>\n{user_input}\n</user_question>"
+                ),
+            ),
         ]
 
         # Get tool definitions for function calling
@@ -181,7 +189,15 @@ async def _layer3_llm_router(user_input: str, candidates: list[dict], session_id
 
         response = await provider.chat_with_tools(messages, tools=tool_defs, temperature=0.3, max_tokens=512)
 
-        return _parse_route_response(response.content, candidates)
+        decision = _parse_route_response(response.content, candidates)
+        if response.tool_calls:
+            decision.tool_plan = [
+                {"tool": call.get("name", ""), "params": call.get("args", {})}
+                for call in response.tool_calls
+                if call.get("name")
+            ]
+            decision.suggested_tools = [item["tool"] for item in decision.tool_plan]
+        return decision
 
     except Exception as e:
         logger.error("router.llm_error", error=str(e))

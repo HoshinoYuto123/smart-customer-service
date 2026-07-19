@@ -84,17 +84,17 @@ async def respond_node(state: AgentState) -> dict:
             f"{h['role']}: {h['content']}" for h in chat_history[-6:]
         )
 
-        prompt = prompt_manager.render("answer_prompt", {
-            "user_input": user_input,
-            "chat_history": history_str,
-            "rag_context": rag_text or "无相关知识库结果",
-            "tool_results": tool_text or "无工具查询结果",
-            "domain": domain,
-        })
+        prompt = prompt_manager.render("answer_prompt", {"domain": domain})
+        user_payload = (
+            f"<conversation_history>\n{history_str}\n</conversation_history>\n\n"
+            f"<knowledge_base>\n{rag_text or '无相关知识库结果'}\n</knowledge_base>\n\n"
+            f"<tool_results>\n{tool_text or '无工具查询结果'}\n</tool_results>\n\n"
+            f"<user_question>\n{user_input}\n</user_question>"
+        )
 
         messages = [
             Message(role="system", content=prompt),
-            Message(role="user", content=user_input),
+            Message(role="user", content=user_payload),
         ]
 
         response = await provider.chat(messages, temperature=0.7, max_tokens=1024)
@@ -119,10 +119,6 @@ async def respond_node(state: AgentState) -> dict:
                 "latency_ms": response.latency_ms,
             },
         )
-
-        # Store in session history
-        await session_mgr.add_history(session_id, "user", user_input)
-        await session_mgr.add_history(session_id, "assistant", response.content)
 
         logger.info("respond.done", domain=domain, tokens=response.tokens_used)
 

@@ -14,6 +14,17 @@ R = TypeVar("R")
 logger = logging.getLogger(__name__)
 
 
+def is_retryable_error(exc: Exception) -> bool:
+    """Provider-neutral retry classification using common SDK attributes."""
+    status_code = getattr(exc, "status_code", None)
+    if isinstance(status_code, int):
+        return status_code in {408, 409, 425, 429} or status_code >= 500
+    if isinstance(exc, (TimeoutError, ConnectionError, OSError, asyncio.TimeoutError)):
+        return True
+    name = type(exc).__name__.lower()
+    return "timeout" in name or "connection" in name or "ratelimit" in name
+
+
 def retry_on_failure(
     max_retries: int | None = None,
     base_delay: float | None = None,

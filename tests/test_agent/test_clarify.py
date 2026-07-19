@@ -60,3 +60,16 @@ class TestClarifyNode:
                     assert result.get("clarify_count") == 1
                     assert result.get("final_response") is not None
                     assert result["final_response"]["action"] == "clarify"
+
+    @pytest.mark.asyncio
+    async def test_llm_can_decide_clarification_is_not_needed(self, sample_agent_state):
+        sample_agent_state["user_input"] = "那个订单已经退款了"
+        with patch("app.agent.nodes.clarify.get_session_manager") as mock_sm:
+            mock_sm.return_value.get_history = AsyncMock(return_value=[])
+            with patch("app.agent.nodes.clarify.get_llm_provider") as mock_llm:
+                provider = AsyncMock()
+                provider.chat.return_value.content = '{"need_clarify": false, "confidence": 0.9}'
+                mock_llm.return_value = provider
+                with patch("app.agent.nodes.clarify.prompt_manager.render", return_value="prompt"):
+                    result = await clarify_node(sample_agent_state)
+        assert result == {"clarify_count": 0}

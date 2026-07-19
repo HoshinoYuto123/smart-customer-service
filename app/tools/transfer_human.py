@@ -3,6 +3,7 @@
 
 from app.agent.types import ToolResult
 from app.tools.registry import tool_registry
+from app.core.config import get_app_config
 
 
 @tool_registry.register(
@@ -26,6 +27,12 @@ from app.tools.registry import tool_registry
 )
 async def transfer_human(params: dict) -> ToolResult:
     """Record a human-transfer request and return a confirmation."""
+    if get_app_config().app.mode != "demo":
+        return ToolResult(
+            tool_name="transfer_human",
+            success=False,
+            error_message="生产环境人工队列适配器尚未配置",
+        )
     reason = params.get("reason", "用户请求转接人工")
     summary = params.get("summary", "")
 
@@ -38,5 +45,6 @@ async def transfer_human(params: dict) -> ToolResult:
             "summary": summary,
             "message": "已为您转接人工客服，请稍候。当前排队人数: 2",
             "estimated_wait_seconds": 30,
+            "is_demo_data": True,
         },
     )

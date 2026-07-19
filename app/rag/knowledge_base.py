@@ -197,6 +197,17 @@ class KnowledgeBaseManager:
 
         return domain_counts
 
+    async def ensure_index(self) -> int:
+        """Build the local index only when the configured collection is empty."""
+        import asyncio
+
+        await self._ensure_services()
+        count = await asyncio.to_thread(self._indexer.collection_count)
+        if count:
+            return count
+        await self.build_all_indices()
+        return await asyncio.to_thread(self._indexer.collection_count)
+
     async def reload_domain(self, domain: str) -> int:
         """Reload a single domain's FAQs into the index.
 

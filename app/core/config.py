@@ -110,13 +110,21 @@ class ObservabilitySettings(BaseModel):
 class AppSettings(BaseModel):
     name: str = "SCS-Agent"
     version: str = "1.0.0"
+    mode: str = "demo"
     host: str = "0.0.0.0"
     port: int = 8000
     debug: bool = False
 
 
+class AuthSettings(BaseModel):
+    secret: str = "local-demo-secret-change-me"
+    token_ttl_seconds: int = 2592000
+    cookie_secure: bool = False
+
+
 class AppConfig(BaseModel):
     app: AppSettings = Field(default_factory=AppSettings)
+    auth: AuthSettings = Field(default_factory=AuthSettings)
     agent: AgentSettings = Field(default_factory=AgentSettings)
     concurrency: ConcurrencySettings = Field(default_factory=ConcurrencySettings)
     session: SessionSettings = Field(default_factory=SessionSettings)

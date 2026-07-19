@@ -1,19 +1,13 @@
 """Order query tool using the logistics database."""
 
 import json
-import random
 from pathlib import Path
-from datetime import datetime, timedelta
 
 from app.agent.types import ToolResult
 from app.tools.registry import tool_registry
+from app.core.config import get_app_config
 
 _DB_PATH = Path(__file__).parent.parent.parent / "knowledge_base" / "logistics_db.json"
-
-# Fallback products for random generation
-_PRODUCTS = ["智能音箱 Pro", "无线蓝牙耳机", "便携充电宝 20000mAh", "机械键盘 红轴", "4K显示器 27寸"]
-_STATUSES = ["待付款", "已付款", "配送中", "已送达", "已取消", "退款中", "已完成"]
-
 
 def _load_db() -> list[dict]:
     """Load the logistics database."""
@@ -22,25 +16,6 @@ def _load_db() -> list[dict]:
             return json.load(f)
     except Exception:
         return []
-
-
-def _random_order(order_id: str) -> dict:
-    """Fallback: generate a random order if not in database."""
-    return {
-        "order_id": order_id,
-        "status": random.choice(_STATUSES),
-        "product": random.choice(_PRODUCTS),
-        "amount": round(random.uniform(29.9, 2999.0), 2),
-        "logistics_company": random.choice(["顺丰速运", "中通快递", "圆通速递", "京东物流"]),
-        "tracking_number": f"SF{random.randint(1000000000, 9999999999)}",
-        "created_at": (datetime.now() - timedelta(days=random.randint(0, 30))).strftime("%Y-%m-%d %H:%M:%S"),
-        "estimated_delivery": (datetime.now() + timedelta(days=random.randint(1, 5))).strftime("%Y-%m-%d"),
-        "receiver_name": "用户",
-        "receiver_address": "地址信息未记录",
-        "tracking_history": [
-            {"time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "status": "订单已创建", "location": "系统"}
-        ],
-    }
 
 
 def _format_order(order: dict) -> str:
@@ -81,6 +56,12 @@ def _format_order(order: dict) -> str:
 )
 async def query_order(params: dict) -> ToolResult:
     """Query orders from the logistics database."""
+    if get_app_config().app.mode != "demo":
+        return ToolResult(
+            tool_name="query_order",
+            success=False,
+            error_message="生产环境订单适配器尚未配置",
+        )
     order_id = params.get("order_id", "").strip()
     phone = params.get("phone", "").strip()
     query = params.get("query", "").strip()
@@ -101,9 +82,6 @@ async def query_order(params: dict) -> ToolResult:
             if order["order_id"].upper() == order_id.upper():
                 results.append(order)
                 break
-        if not results:
-            # Fallback: generate random order with given ID
-            results.append(_random_order(order_id))
 
     # Phone match
     elif phone:
@@ -117,10 +95,6 @@ async def query_order(params: dict) -> ToolResult:
         for order in db:
             if query in order.get("product", ""):
                 results.append(order)
-
-    # No specific params: return a few recent orders
-    if not results:
-        results = db[:2] if db else [_random_order("ORD000000")]
 
     # Build formatted data
     formatted_orders = []
@@ -146,6 +120,11 @@ async def query_order(params: dict) -> ToolResult:
         data={
             "orders": formatted_orders,
             "total": len(formatted_orders),
-            "summary_text": "\n\n---\n\n".join(o["detail_text"] for o in formatted_orders),
+            "summary_text": (
+                "\n\n---\n\n".join(o["detail_text"] for o in formatted_orders)
+                if formatted_orders
+                else "未找到匹配订单，请核对订单号或手机号。"
+            ),
+            "is_demo_data": True,
         },
     )

@@ -49,13 +49,13 @@ class EmbeddingService:
         logger.info("Embedding model loaded successfully.")
 
     def _load_model_sync(self):
-        from sentence_transformers import SentenceTransformer
         import os
         # Quick connectivity check - if HF is unreachable, skip immediately
         if os.environ.get("SKIP_EMBEDDING_MODEL", "") == "1":
             logger.info("Embedding model loading skipped (SKIP_EMBEDDING_MODEL=1)")
             return None
         try:
+            from sentence_transformers import SentenceTransformer
             # Set a short timeout for the HTTP request
             os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "5")
             return SentenceTransformer(self._model_name)
@@ -68,6 +68,10 @@ class EmbeddingService:
         if self._model is None:
             raise RuntimeError("Embedding model not loaded. Call get_instance() first.")
         return self._model
+
+    @property
+    def available(self) -> bool:
+        return self._model is not None
 
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
         """Embed a batch of texts and return a list of embedding vectors."""

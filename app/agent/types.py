@@ -49,6 +49,7 @@ class RouteDecision(BaseModel):
     sub_intent: str = ""
     confidence: float = 0.0
     suggested_tools: list[str] = Field(default_factory=list)
+    tool_plan: list[dict] = Field(default_factory=list)
     reasoning: str = ""
     layer1_result: str = ""
     layer2_candidates: list[dict] = Field(default_factory=list)
@@ -95,8 +96,8 @@ class AgentResponse(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    session_id: str
-    message: str
+    session_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")
+    message: str = Field(max_length=10000)
     context: dict = Field(default_factory=dict)
 
 
@@ -108,6 +109,8 @@ class HealthResponse(BaseModel):
     status: str = "ok"
     version: str = "1.0.0"
     providers: list[str] = Field(default_factory=list)
+    mode: str = "demo"
+    checks: dict[str, bool] = Field(default_factory=dict)
 
 
 # ── LLM ─────────────────────────────────────────────────────────

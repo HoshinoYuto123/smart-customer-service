@@ -41,7 +41,7 @@ async def clarify_node(state: AgentState) -> dict:
     clarify_count = state.get("clarify_count", 0)
     trace_id = get_trace_id()
 
-    logger.info("clarify.eval", input=user_input[:100], clarify_count=clarify_count, trace_id=trace_id)
+    logger.info("clarify.eval", input_length=len(user_input), clarify_count=clarify_count, trace_id=trace_id)
 
     # Quick heuristic check first
     fuzz_score = _quick_fuzz_check(user_input)
@@ -50,7 +50,6 @@ async def clarify_node(state: AgentState) -> dict:
     # If above threshold, no clarification needed
     if fuzz_score >= threshold:
         logger.info("clarify.skip", fuzz_score=fuzz_score, threshold=threshold)
-        await session_mgr.reset_clarify_count(session_id)
         return {"clarify_count": 0}
 
     # Max rounds exceeded - give up
@@ -66,21 +65,28 @@ async def clarify_node(state: AgentState) -> dict:
         history_str = "\n".join(f"{h['role']}: {h['content']}" for h in chat_history[-6:])
 
         prompt = prompt_manager.render("clarify_prompt", {
-            "user_input": user_input,
-            "chat_history": history_str,
             "clarify_count": str(clarify_count),
             "max_rounds": str(max_rounds),
         })
 
         messages = [
             Message(role="system", content=prompt),
-            Message(role="user", content=user_input),
+            Message(
+                role="user",
+                content=(
+                    f"<conversation_history>\n{history_str}\n</conversation_history>\n\n"
+                    f"<user_question>\n{user_input}\n</user_question>"
+                ),
+            ),
         ]
         response = await provider.chat(messages, temperature=0.5, max_tokens=512)
 
         # Parse JSON from response
         result = _parse_clarify_response(response.content)
-        await session_mgr.increment_clarify_count(session_id)
+
+        if not result.need_clarify:
+            logger.info("clarify.llm_skip", confidence=result.confidence)
+            return {"clarify_count": 0}
 
         logger.info("clarify.need_clarify", clarify_type=result.clarify_type, confidence=result.confidence)
         return {

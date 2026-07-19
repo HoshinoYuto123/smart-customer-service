@@ -5,10 +5,14 @@ Tools register via @tool_registry.register() and are executed by name.
 
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import Any, Callable, Coroutine
 
 from app.agent.types import ToolDef, ToolResult
+from app.core.config import get_app_config, get_tool_config
+from app.resilience.circuit_breaker import CircuitBreaker
+from app.resilience.retry import is_retryable_error
 
 
 class ToolRegistry:
@@ -20,6 +24,7 @@ class ToolRegistry:
 
     def __init__(self) -> None:
         self._tools: dict[str, dict] = {}
+        self._breakers: dict[str, CircuitBreaker] = {}
 
     def register(
         self,
@@ -97,12 +102,37 @@ class ToolRegistry:
                 error_message=f"Tool '{name}' is not registered.",
             )
 
+        item_config = get_tool_config().tools.get(name)
+        if item_config and not item_config.enabled:
+            return ToolResult(tool_name=name, success=False, error_message=f"Tool '{name}' is disabled.")
+
+        validation_error = self._validate_params(entry["definition"].parameters, params)
+        if validation_error:
+            return ToolResult(tool_name=name, success=False, error_message=validation_error)
+
         func = entry["func"]
         fallback = entry.get("fallback")
 
         start = time.perf_counter()
         try:
-            data = await func(params)
+            breaker = self._breakers.setdefault(
+                name,
+                CircuitBreaker(name=f"tool:{name}", failure_predicate=is_retryable_error),
+            )
+            timeout = item_config.timeout if item_config else 5
+
+            async def invoke():
+                retries = get_app_config().retry.tool_max_retries
+                delay = get_app_config().retry.tool_delay
+                for attempt in range(retries + 1):
+                    try:
+                        return await asyncio.wait_for(func(params), timeout=timeout)
+                    except Exception as exc:
+                        if not is_retryable_error(exc) or attempt >= retries:
+                            raise
+                        await asyncio.sleep(delay * (2 ** attempt))
+
+            data = await breaker.call(invoke)
             latency = (time.perf_counter() - start) * 1000
             if isinstance(data, ToolResult):
                 data.latency_ms = round(latency, 2)
@@ -127,12 +157,28 @@ class ToolRegistry:
                         error_message=str(fb_exc),
                         latency_ms=round(latency, 2),
                     )
+            message = item_config.fallback_message if item_config and item_config.fallback_message else str(exc)
             return ToolResult(
                 tool_name=name,
                 success=False,
-                error_message=str(exc),
+                error_message=message,
                 latency_ms=round(latency, 2),
             )
+
+    @staticmethod
+    def _validate_params(schema: dict, params: dict) -> str:
+        required = schema.get("required", [])
+        missing = [key for key in required if params.get(key) in (None, "")]
+        if missing:
+            return f"缺少必填参数: {', '.join(missing)}"
+        properties = schema.get("properties", {})
+        python_types = {"string": str, "number": (int, float), "integer": int, "boolean": bool, "object": dict, "array": list}
+        for key, value in params.items():
+            expected_name = properties.get(key, {}).get("type")
+            expected = python_types.get(expected_name)
+            if expected and not isinstance(value, expected):
+                return f"参数 {key} 类型错误，应为 {expected_name}"
+        return ""
 
 
 # Singleton instance

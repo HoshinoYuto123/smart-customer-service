@@ -6,6 +6,7 @@ from app.llm.openai_provider import OpenAIProvider
 from app.llm.claude_provider import ClaudeProvider
 from app.llm.qwen_provider import QwenProvider
 from app.llm.mock_provider import MockProvider
+from app.llm.resilient_provider import ResilientLLMProvider
 
 
 _PROVIDER_CLASSES = {
@@ -28,13 +29,14 @@ def create_provider(provider_name: str, config: ModelConfig | None = None) -> LL
     provider_config = config.providers[provider_name]
     cls = _PROVIDER_CLASSES.get(provider_name, MockProvider)
 
-    return cls(
+    provider = cls(
         model=provider_config.model,
         api_key=provider_config.api_key,
         base_url=provider_config.base_url,
         timeout=provider_config.timeout,
         max_retries=provider_config.max_retries,
     )
+    return ResilientLLMProvider(provider)
 
 
 def create_provider_for_scene(scene: str, config: ModelConfig | None = None) -> LLMProvider:

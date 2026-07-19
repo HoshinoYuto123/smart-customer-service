@@ -70,3 +70,21 @@ class TestCircuitBreaker:
         assert status["name"] == "test"
         assert status["state"] == "closed"
         assert status["failure_count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_non_retryable_errors_do_not_open_circuit(self):
+        cb = CircuitBreaker(
+            name="test",
+            failure_threshold=2,
+            cooldown_seconds=60,
+            failure_predicate=lambda exc: not isinstance(exc, ValueError),
+        )
+
+        async def invalid_request():
+            raise ValueError("bad request")
+
+        for _ in range(3):
+            with pytest.raises(ValueError):
+                await cb.call(invalid_request)
+        assert cb.state == CircuitState.CLOSED
+        assert cb.failure_count == 0

@@ -18,7 +18,10 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Warm up providers and knowledge base on startup."""
-    logger.info("app.starting", version=get_app_config().app.version)
+    app_config = get_app_config()
+    if app_config.app.mode == "production" and app_config.auth.secret == "local-demo-secret-change-me":
+        raise RuntimeError("AUTH_SECRET must be configured in production")
+    logger.info("app.starting", version=app_config.app.version, mode=app_config.app.mode)
 
     # Import all tool modules to register them
     try:
@@ -41,7 +44,8 @@ async def lifespan(app: FastAPI):
     try:
         from app.rag.knowledge_base import knowledge_base_manager
         knowledge_base_manager.load_all_domains()
-        logger.info("knowledge_base.loaded")
+        index_count = await knowledge_base_manager.ensure_index()
+        logger.info("knowledge_base.loaded", index_count=index_count)
     except Exception as e:
         logger.warning("knowledge_base.load_failed", error=str(e))
 

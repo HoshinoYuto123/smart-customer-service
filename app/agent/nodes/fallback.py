@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from app.agent.state import AgentState
 from app.agent.types import AgentResponse
-from app.core.observability import get_logger, get_trace_id, get_session_id
+from app.core.observability import get_logger, get_trace_id
+from app.core.config import get_app_config
 
 logger = get_logger(__name__)
 
@@ -17,7 +18,7 @@ async def fallback_node(state: AgentState) -> dict:
     logger.info("fallback.start", level=fallback_level, errors=len(error_history), trace_id=trace_id)
 
     # Level 0: Clarification exhausted -> transfer to human
-    if clarify_count >= 2:
+    if clarify_count >= get_app_config().agent.max_clarify_rounds:
         response = AgentResponse(
             text="抱歉，我暂时无法准确理解您的问题。正在为您转接人工客服，请稍等。",
             multimedia=[],

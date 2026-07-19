@@ -8,6 +8,7 @@ from app.agent.nodes.router import router_node
 from app.agent.nodes.executor import executor_node
 from app.agent.nodes.respond import respond_node
 from app.agent.nodes.fallback import fallback_node
+from app.core.config import get_app_config
 
 
 def route_after_clarify(state: AgentState) -> str:
@@ -16,7 +17,7 @@ def route_after_clarify(state: AgentState) -> str:
     if final_response and final_response.get("action") == "clarify":
         return "clarify_response"
     clarify_count = state.get("clarify_count", 0)
-    if clarify_count >= 2:
+    if clarify_count >= get_app_config().agent.max_clarify_rounds:
         return "give_up"
     return "ready"
 

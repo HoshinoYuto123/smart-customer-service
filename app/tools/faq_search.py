@@ -34,10 +34,9 @@ async def faq_search(params: dict) -> ToolResult:
 
     # Lazily import the hybrid retriever to avoid circular imports at module level.
     try:
-        from app.rag.retriever import HybridRetriever
+        from app.rag.retriever import hybrid_retriever
 
-        retriever = HybridRetriever()
-        results = await retriever.search(
+        results = await hybrid_retriever.retrieve(
             query=query,
             domain=domain_filter,
         )

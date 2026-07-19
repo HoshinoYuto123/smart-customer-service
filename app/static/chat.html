@@ -399,14 +399,15 @@
                     else dateStr = d.toLocaleDateString('zh-CN', {month:'short',day:'numeric'});
 
                     const active = s.id === currentSessionId ? ' active' : '';
+                    const safeId = encodeURIComponent(s.id);
                     const icon = s.title.includes('物流') ? '📦' : s.title.includes('退款') ? '💰' : s.title.includes('密码') ? '🔑' : '💬';
-                    return `<div class="session-item${active}" onclick="switchSession('${s.id}')">
+                    return `<div class="session-item${active}" onclick="switchSession(decodeURIComponent('${safeId}'))">
                         <div class="icon">${icon}</div>
                         <div class="content">
                             <div class="title">${escHtml(s.title || '新对话')}</div>
                             <div class="date">${dateStr} · ${s.msg_count}条消息</div>
                         </div>
-                        <button class="del-btn" onclick="event.stopPropagation();delSession('${s.id}')">✕</button>
+                        <button class="del-btn" onclick="event.stopPropagation();delSession(decodeURIComponent('${safeId}'))">✕</button>
                     </div>`;
                 }).join('');
             } catch(e) { console.error(e); }
@@ -550,7 +551,7 @@
                 const resp = await fetch(API_BASE + '/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: currentSessionId, message: text, context: { user_id: 'web_user', channel: 'web' } })
+                    body: JSON.stringify({ session_id: currentSessionId, message: text, context: { channel: 'web' } })
                 });
                 if (!resp.ok) {
                     const err = await resp.json();
@@ -574,9 +575,15 @@
             sendMessage();
         }
 
+        async function initApp() {
+            const auth = await fetch(API_BASE + '/auth/anonymous', { method: 'POST' });
+            if (!auth.ok) throw new Error('身份初始化失败');
+            await loadSessionList();
+            document.getElementById('userInput').focus();
+        }
+
         // ── Init ──
-        loadSessionList();
-        document.getElementById('userInput').focus();
+        initApp().catch(() => addMessage('bot', '身份初始化失败，请刷新页面重试。'));
     </script>
 </body>
 </html>

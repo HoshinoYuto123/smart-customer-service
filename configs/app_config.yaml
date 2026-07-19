@@ -1,9 +1,15 @@
 app:
   name: "SCS-Agent"
   version: "1.0.0"
+  mode: ${APP_MODE:demo}
   host: "0.0.0.0"
   port: 8000
   debug: false
+
+auth:
+  secret: ${AUTH_SECRET:local-demo-secret-change-me}
+  token_ttl_seconds: 2592000
+  cookie_secure: ${AUTH_COOKIE_SECURE:false}
 
 agent:
   max_clarify_rounds: 2
