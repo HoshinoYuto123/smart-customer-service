@@ -1,6 +1,6 @@
 # 智能客服 Agent 系统
 
-🚀 **在线体验**：https://smart-customer-service-8djy.onrender.com/static/chat.html
+🚀 **在线体验**：https://smart-customer-service-8djy.onrender.com/static/chat.html?v=20260719-ui2
 
 基于 LangGraph + DeepSeek 的智能客服参考实现，支持多轮对话、工具调用、RAG 知识库、会话隔离与历史管理。项目默认以 `demo` 模式运行；接入真实业务 API 和外部会话存储后再用于生产环境。
 
@@ -42,7 +42,7 @@ python -m app.main
 
 ### 4. 打开界面
 
-浏览器访问 **https://smart-customer-service-8djy.onrender.com/static/chat.html**
+浏览器访问 **https://smart-customer-service-8djy.onrender.com/static/chat.html?v=20260719-ui2**
 
 ## 项目结构
 

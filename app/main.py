@@ -13,6 +13,7 @@ from app.core.config import get_app_config
 from app.core.observability import get_logger
 
 logger = get_logger(__name__)
+CHAT_UI_URL = "/static/chat.html?v=20260719-ui2"
 
 
 @asynccontextmanager
@@ -76,7 +77,17 @@ def create_app() -> FastAPI:
     # Root redirect to chat UI
     @app.get("/")
     async def root():
-        return RedirectResponse(url="/static/chat.html")
+        return RedirectResponse(url=CHAT_UI_URL)
+
+    @app.middleware("http")
+    async def prevent_stale_chat_ui(request, call_next):
+        """Always serve the current chat shell instead of a cached deployment."""
+        response = await call_next(request)
+        if request.url.path == "/static/chat.html":
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
 
     # Routes
     app.include_router(api_router)
