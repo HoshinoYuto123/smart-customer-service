@@ -1,589 +1,572 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能客服中心</title>
-    <style>
-        :root {
-            --brand: #FF6B35;
-            --brand-light: #FFF3ED;
-            --brand-dark: #E55A2B;
-            --bg: #F5F5F5;
-            --white: #FFFFFF;
-            --text: #333333;
-            --text-secondary: #999999;
-            --border: #F0F0F0;
-            --shadow: 0 2px 12px rgba(0,0,0,0.06);
-            --radius: 12px;
-            --radius-sm: 8px;
-        }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101828">
+  <title>商服台 · 智能客服</title>
+  <style>
+    :root {
+      --ink: #101828;
+      --ink-soft: #1d2939;
+      --navy: #142033;
+      --navy-2: #1a2940;
+      --paper: #ffffff;
+      --canvas: #eef2f7;
+      --line: #e3e8ef;
+      --muted: #667085;
+      --subtle: #98a2b3;
+      --blue: #315efb;
+      --blue-deep: #2448c8;
+      --blue-soft: #eef2ff;
+      --mint: #18a874;
+      --mint-soft: #e9f8f2;
+      --amber: #ed8b2d;
+      --danger: #d92d20;
+      --danger-soft: #fff1f0;
+      --shadow: 0 16px 44px rgba(16, 24, 40, .10);
+      --radius-lg: 20px;
+      --radius: 14px;
+      --radius-sm: 10px;
+    }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      color: var(--ink-soft);
+      background: var(--canvas);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    button, textarea, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, textarea:focus-visible, input:focus-visible {
+      outline: 3px solid rgba(49, 94, 251, .25);
+      outline-offset: 2px;
+    }
+    .icon { width: 18px; height: 18px; display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .app { display: grid; grid-template-columns: 300px minmax(0, 1fr) 260px; height: 100dvh; max-width: 1680px; margin: auto; background: var(--paper); box-shadow: var(--shadow); }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-            background: #F0F0F0;
-            display: flex; justify-content: center; align-items: center;
-            height: 100vh; color: var(--text);
-            -webkit-font-smoothing: antialiased;
-        }
+    /* Conversation archive */
+    .sidebar { position: relative; z-index: 30; display: flex; flex-direction: column; min-width: 0; color: #f8fafc; background: var(--navy); border-right: 1px solid rgba(255,255,255,.06); }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 24px 22px 18px; }
+    .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; color: #fff; background: var(--blue); border-radius: 12px; box-shadow: 0 8px 18px rgba(49,94,251,.28); }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .brand-title { font: 700 17px/1.2 "Avenir Next", "PingFang SC", sans-serif; letter-spacing: .02em; }
+    .brand-subtitle { margin-top: 3px; color: #93a4bb; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+    .new-chat { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 18px 16px; padding: 11px 14px; color: #fff; background: var(--blue); border: 0; border-radius: 11px; font-weight: 650; cursor: pointer; transition: transform .18s, background .18s; }
+    .new-chat:hover { background: #426bff; transform: translateY(-1px); }
+    .search-wrap { position: relative; margin: 0 18px 12px; }
+    .search-wrap svg { position: absolute; left: 12px; top: 50%; width: 16px; height: 16px; color: #8291a7; transform: translateY(-50%); }
+    .session-search { width: 100%; padding: 10px 12px 10px 36px; color: #eef2f7; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; font-size: 13px; }
+    .session-search::placeholder { color: #8291a7; }
+    .session-search:focus { background: rgba(255,255,255,.1); border-color: rgba(108,132,255,.7); }
+    .archive-label { padding: 5px 22px 8px; color: #788ba5; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .session-list { flex: 1; overflow: auto; padding: 0 10px 18px; scrollbar-width: thin; scrollbar-color: #3c4b61 transparent; }
+    .session-item { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr) 28px; gap: 9px; align-items: center; width: 100%; margin: 2px 0; padding: 10px 8px; color: #cbd5e1; background: transparent; border: 0; border-radius: 10px; text-align: left; cursor: pointer; }
+    .session-item:hover { background: rgba(255,255,255,.06); }
+    .session-item.active { color: #fff; background: rgba(49,94,251,.20); }
+    .session-symbol { display: grid; place-items: center; width: 32px; height: 32px; background: rgba(255,255,255,.07); border-radius: 9px; }
+    .session-item.active .session-symbol { color: #bfcaff; background: rgba(49,94,251,.22); }
+    .session-copy { min-width: 0; }
+    .session-title { overflow: hidden; font-size: 13px; font-weight: 590; text-overflow: ellipsis; white-space: nowrap; }
+    .session-meta { margin-top: 4px; color: #788ba5; font-size: 11px; }
+    .session-delete { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; color: #8391a5; background: transparent; border: 0; border-radius: 8px; opacity: 0; cursor: pointer; }
+    .session-item:hover .session-delete, .session-delete:focus-visible { opacity: 1; }
+    .session-delete:hover { color: #ffb4ab; background: rgba(217,45,32,.16); }
+    .session-empty { padding: 36px 20px; color: #8090a6; font-size: 13px; line-height: 1.7; text-align: center; }
+    .sidebar-foot { margin: 0 18px 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); color: #8fa0b6; font-size: 11px; line-height: 1.6; }
 
-        .app-layout {
-            width: 100%; max-width: 1100px; height: 100vh;
-            display: flex; background: var(--white);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-        }
-        @media (min-width: 768px) {
-            .app-layout { height: 92vh; border-radius: 16px; overflow: hidden; }
-        }
+    /* Main service workspace */
+    .workspace { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #f8fafc; }
+    .topbar { display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 14px 24px; background: rgba(255,255,255,.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(12px); }
+    .mobile-menu { display: none; }
+    .agent-avatar { position: relative; display: grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; color: var(--blue); background: var(--blue-soft); border-radius: 13px; }
+    .agent-avatar::after { content: ""; position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; background: var(--mint); border: 2px solid white; border-radius: 50%; }
+    .agent-heading { min-width: 0; }
+    .agent-heading h1 { margin: 0; font: 700 16px/1.3 "Avenir Next", "PingFang SC", sans-serif; }
+    .agent-heading p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .status-pill { display: inline-flex; align-items: center; gap: 7px; margin-right: 4px; padding: 7px 10px; color: #087553; background: var(--mint-soft); border-radius: 999px; font-size: 12px; font-weight: 650; }
+    .status-dot { width: 7px; height: 7px; background: currentColor; border-radius: 50%; box-shadow: 0 0 0 3px rgba(24,168,116,.12); }
+    .status-pill.degraded { color: #9a5b13; background: #fff6e8; }
+    .status-pill.offline { color: var(--danger); background: var(--danger-soft); }
+    .icon-btn { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; color: var(--muted); background: #fff; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+    .icon-btn:hover { color: var(--blue); border-color: #c8d2ff; background: var(--blue-soft); }
 
-        /* ── Sidebar ─────────────────────────────── */
-        .sidebar {
-            width: 270px; background: #1B1F2A; color: #B0B8C8;
-            display: flex; flex-direction: column; flex-shrink: 0;
-            user-select: none;
-        }
-        @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -280px; top: 0; bottom: 0; z-index: 100;
-                transition: left 0.3s; width: 280px; }
-            .sidebar.open { left: 0; box-shadow: 4px 0 20px rgba(0,0,0,0.3); }
-        }
+    .service-route { display: none; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 12px 24px; background: #fff; border-bottom: 1px solid var(--line); }
+    .service-route.visible { display: grid; }
+    .route-step { position: relative; display: flex; align-items: center; gap: 9px; color: var(--subtle); font-size: 12px; }
+    .route-step:not(:last-child)::after { content: ""; position: absolute; right: -8px; width: 16px; height: 1px; background: var(--line); }
+    .route-number { display: grid; place-items: center; width: 22px; height: 22px; background: #f2f4f7; border-radius: 50%; font: 700 11px/1 ui-monospace, monospace; }
+    .route-step.active { color: var(--blue); font-weight: 650; }
+    .route-step.active .route-number { color: #fff; background: var(--blue); animation: pulse 1.3s infinite; }
+    .route-step.done { color: var(--mint); }
+    .route-step.done .route-number { color: #fff; background: var(--mint); }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 5px rgba(49,94,251,.1); } }
 
-        .sidebar-brand {
-            padding: 20px 18px; border-bottom: 1px solid #2A2F3D;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .sidebar-brand .logo {
-            width: 36px; height: 36px; border-radius: 10px;
-            background: linear-gradient(135deg, var(--brand), #FF9A6C);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; color: #fff;
-        }
-        .sidebar-brand .name { font-size: 16px; font-weight: 600; color: #E8ECF2; }
+    .messages { flex: 1; min-height: 0; overflow-y: auto; scroll-behavior: smooth; }
+    .messages-inner { width: min(780px, calc(100% - 40px)); margin: 0 auto; padding: 30px 0 22px; }
+    .welcome { padding: 18px 0 26px; }
+    .welcome-kicker { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 14px; color: var(--blue); font: 700 11px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+    .welcome-kicker::before { content: ""; width: 18px; height: 2px; background: var(--blue); }
+    .welcome h2 { max-width: 560px; margin: 0; color: var(--ink); font: 750 clamp(25px, 3vw, 36px)/1.25 "Avenir Next", "PingFang SC", sans-serif; letter-spacing: -.025em; }
+    .welcome > p { max-width: 560px; margin: 13px 0 24px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+    .issue-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .issue-card { display: grid; grid-template-columns: 38px minmax(0,1fr) 18px; gap: 12px; align-items: center; padding: 14px; color: var(--ink-soft); background: #fff; border: 1px solid var(--line); border-radius: var(--radius); text-align: left; cursor: pointer; transition: border-color .18s, transform .18s, box-shadow .18s; }
+    .issue-card:hover { border-color: #c2ceff; transform: translateY(-2px); box-shadow: 0 8px 22px rgba(49,94,251,.08); }
+    .issue-icon { display: grid; place-items: center; width: 38px; height: 38px; color: var(--blue); background: var(--blue-soft); border-radius: 11px; }
+    .issue-card:nth-child(2) .issue-icon { color: #087553; background: var(--mint-soft); }
+    .issue-card:nth-child(3) .issue-icon { color: #9a5b13; background: #fff6e8; }
+    .issue-card:nth-child(4) .issue-icon { color: #6941c6; background: #f4f0ff; }
+    .issue-title { display: block; font-size: 13px; font-weight: 700; }
+    .issue-desc { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .issue-arrow { color: var(--subtle); font-size: 18px; }
 
-        .sidebar-action {
-            padding: 14px 18px; border-bottom: 1px solid #2A2F3D;
-        }
-        .sidebar-action button {
-            width: 100%; padding: 10px 0; border: 1.5px dashed #3A4055;
-            border-radius: 10px; background: transparent; color: #8B95AB;
-            cursor: pointer; font-size: 14px; transition: all 0.2s;
-            font-family: inherit; display: flex; align-items: center;
-            justify-content: center; gap: 6px;
-        }
-        .sidebar-action button:hover {
-            border-color: var(--brand); color: var(--brand);
-            background: rgba(255,107,53,0.06);
-        }
+    .message-row { display: flex; gap: 10px; margin: 20px 0; animation: enter .24s ease both; }
+    .message-row.user { justify-content: flex-end; }
+    @keyframes enter { from { opacity: 0; transform: translateY(6px); } }
+    .message-avatar { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; margin-top: 2px; color: var(--blue); background: var(--blue-soft); border-radius: 9px; }
+    .message-avatar .icon { width: 16px; height: 16px; }
+    .message-stack { max-width: min(620px, 82%); }
+    .bubble { padding: 12px 15px; background: #fff; border: 1px solid var(--line); border-radius: 4px 15px 15px 15px; box-shadow: 0 2px 8px rgba(16,24,40,.03); font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
+    .user .bubble { color: #fff; background: var(--blue); border-color: var(--blue); border-radius: 15px 4px 15px 15px; box-shadow: 0 5px 14px rgba(49,94,251,.14); }
+    .bubble p { margin: 0 0 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble ul, .bubble ol { margin: 7px 0; padding-left: 22px; }
+    .bubble code { padding: 2px 5px; background: #f2f4f7; border-radius: 5px; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .user .bubble code { background: rgba(255,255,255,.14); }
+    .message-meta { display: flex; align-items: center; gap: 8px; min-height: 24px; margin-top: 5px; color: var(--subtle); font-size: 10px; }
+    .user .message-meta { justify-content: flex-end; }
+    .message-action { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px; color: var(--muted); background: transparent; border: 0; border-radius: 6px; font-size: 10px; cursor: pointer; }
+    .message-action:hover { color: var(--blue); background: var(--blue-soft); }
+    .quick-replies { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+    .quick-reply { padding: 7px 11px; color: var(--blue); background: #fff; border: 1px solid #cbd5ff; border-radius: 999px; font-size: 12px; cursor: pointer; }
+    .quick-reply:hover { color: #fff; background: var(--blue); border-color: var(--blue); }
+    .transfer-notice { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px 12px; color: #765117; background: #fff8eb; border: 1px solid #f7d7a0; border-radius: 10px; font-size: 12px; }
+    .error-card { margin-top: 8px; padding: 10px 12px; color: #912018; background: var(--danger-soft); border: 1px solid #ffd2ce; border-radius: 10px; font-size: 12px; }
+    .error-card button { margin-left: 6px; padding: 3px 8px; color: var(--danger); background: #fff; border: 1px solid #ffc5bf; border-radius: 6px; cursor: pointer; }
+    .typing { display: flex; gap: 5px; align-items: center; height: 24px; }
+    .typing span { width: 6px; height: 6px; background: #98a2b3; border-radius: 50%; animation: typing 1.2s infinite; }
+    .typing span:nth-child(2) { animation-delay: .15s; }
+    .typing span:nth-child(3) { animation-delay: .3s; }
+    @keyframes typing { 40% { transform: translateY(-4px); background: var(--blue); } }
 
-        .session-list { flex: 1; overflow-y: auto; padding: 8px 10px; }
-        .session-list .section-title {
-            font-size: 11px; color: #5A6275; padding: 10px 8px 6px;
-            text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
-        }
+    .composer-shell { padding: 12px 22px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(to top, #fff 72%, rgba(255,255,255,.82)); border-top: 1px solid var(--line); }
+    .composer { width: min(800px, 100%); margin: auto; padding: 9px 9px 7px 15px; background: #fff; border: 1px solid #d5dce5; border-radius: 16px; box-shadow: 0 8px 28px rgba(16,24,40,.07); transition: border-color .18s, box-shadow .18s; }
+    .composer:focus-within { border-color: #9bafff; box-shadow: 0 8px 30px rgba(49,94,251,.10), 0 0 0 3px rgba(49,94,251,.08); }
+    .composer-row { display: flex; align-items: flex-end; gap: 10px; }
+    #messageInput { flex: 1; min-height: 34px; max-height: 130px; padding: 7px 0; color: var(--ink); background: transparent; border: 0; outline: 0; resize: none; line-height: 1.5; }
+    #messageInput::placeholder { color: var(--subtle); }
+    .send-btn { display: grid; place-items: center; flex: 0 0 auto; width: 40px; height: 40px; padding: 0; color: #fff; background: var(--blue); border: 0; border-radius: 12px; cursor: pointer; transition: background .18s, transform .18s; }
+    .send-btn:hover { background: var(--blue-deep); transform: translateY(-1px); }
+    .send-btn:disabled { color: #aab2bd; background: #edf0f4; cursor: not-allowed; transform: none; }
+    .send-btn.stop { color: var(--danger); background: var(--danger-soft); }
+    .composer-foot { display: flex; justify-content: space-between; gap: 12px; padding: 4px 49px 0 0; color: var(--subtle); font-size: 10px; }
+    #charCount.near-limit { color: var(--danger); }
 
-        .session-item {
-            padding: 10px 12px; border-radius: 10px; cursor: pointer;
-            margin-bottom: 2px; transition: all 0.15s;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .session-item:hover { background: #262B38; }
-        .session-item.active { background: #2A3040; }
+    /* Context dock */
+    .dock { display: flex; flex-direction: column; min-width: 0; padding: 22px 18px; background: #fff; border-left: 1px solid var(--line); overflow-y: auto; }
+    .dock-title { margin: 0 0 14px; color: var(--ink); font: 700 13px/1.4 "Avenir Next", "PingFang SC", sans-serif; }
+    .dock-card { margin-bottom: 12px; padding: 14px; background: #f8fafc; border: 1px solid var(--line); border-radius: var(--radius); }
+    .dock-label { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .dock-card p { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .task-list { display: grid; gap: 7px; margin-top: 10px; }
+    .task-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 9px 10px; color: var(--ink-soft); background: #fff; border: 1px solid var(--line); border-radius: 9px; font-size: 12px; text-align: left; cursor: pointer; }
+    .task-btn:hover { color: var(--blue); border-color: #c3ceff; }
+    .dock-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .dock-action { padding: 9px 8px; color: var(--muted); background: #fff; border: 1px solid var(--line); border-radius: 9px; font-size: 11px; cursor: pointer; }
+    .dock-action:hover { color: var(--blue); border-color: #c3ceff; background: var(--blue-soft); }
+    .privacy { margin-top: auto; display: flex; gap: 8px; padding: 14px 4px 0; color: var(--subtle); font-size: 10px; line-height: 1.6; }
+    .privacy svg { flex: 0 0 auto; margin-top: 2px; }
 
-        .session-item .icon {
-            width: 32px; height: 32px; border-radius: 8px;
-            background: #2A3040; display: flex; align-items: center;
-            justify-content: center; font-size: 14px; flex-shrink: 0;
-        }
-        .session-item.active .icon { background: rgba(255,107,53,0.15); }
+    .overlay { display: none; position: fixed; inset: 0; z-index: 25; background: rgba(16,24,40,.48); backdrop-filter: blur(2px); }
+    .toast-region { position: fixed; z-index: 100; right: 20px; bottom: 20px; display: grid; gap: 8px; pointer-events: none; }
+    .toast { min-width: 220px; padding: 11px 14px; color: #fff; background: var(--ink); border-radius: 10px; box-shadow: var(--shadow); font-size: 12px; animation: toast-in .2s ease; }
+    .toast.error { background: #912018; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 
-        .session-item .content { flex: 1; min-width: 0; }
-        .session-item .title {
-            font-size: 13px; color: #D0D7E2; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis; line-height: 1.4;
-        }
-        .session-item .date {
-            font-size: 11px; color: #5A6275; margin-top: 2px;
-        }
-        .session-item .del-btn {
-            opacity: 0; background: none; border: none; color: #6B7280;
-            cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 6px;
-            transition: all 0.15s; flex-shrink: 0;
-        }
-        .session-item:hover .del-btn { opacity: 1; }
-        .session-item .del-btn:hover { background: rgba(220,53,69,0.2); color: #F87171; }
-
-        /* ── Chat ──────────────────────────────── */
-        .chat-container { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #FAFAFA; }
-
-        .chat-header {
-            background: linear-gradient(135deg, #FF6B35, #FF8C5A);
-            color: #fff; padding: 14px 20px; display: flex;
-            align-items: center; gap: 12px; flex-shrink: 0; position: relative;
-            box-shadow: 0 2px 8px rgba(255,107,53,0.15);
-        }
-        .chat-header .menu-btn {
-            display: none; background: none; border: none; color: #fff;
-            font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
-        }
-        @media (max-width: 768px) { .chat-header .menu-btn { display: block; } }
-
-        .chat-header .avatar {
-            width: 42px; height: 42px; border-radius: 12px;
-            background: rgba(255,255,255,0.25); display: flex;
-            align-items: center; justify-content: center; font-size: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .chat-header .info h3 { font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
-        .chat-header .info span { font-size: 11px; opacity: 0.9; }
-        .chat-header .status-dot {
-            width: 8px; height: 8px; border-radius: 50%; background: #4ADE80;
-            display: inline-block; margin-right: 4px; animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; } 50% { opacity: 0.5; }
-        }
-
-        /* ── Messages ──────────────────────────── */
-        .chat-messages {
-            flex: 1; overflow-y: auto; padding: 20px 16px;
-            display: flex; flex-direction: column; gap: 14px;
-            background: #F7F7F8;
-        }
-
-        .message { display: flex; gap: 8px; max-width: 82%; animation: msgIn 0.35s cubic-bezier(0.34,1.56,0.64,1); }
-        @keyframes msgIn {
-            from { opacity: 0; transform: translateY(16px) scale(0.96); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .message.user { align-self: flex-end; flex-direction: row-reverse; }
-        .message.bot { align-self: flex-start; }
-
-        .message .avatar-sm {
-            width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; margin-top: 2px;
-        }
-        .message.bot .avatar-sm { background: #FFF3ED; }
-        .message.user .avatar-sm { background: #F0F0F5; }
-
-        .message .body { display: flex; flex-direction: column; gap: 6px; }
-        .message .bubble {
-            padding: 12px 15px; font-size: 14.5px; line-height: 1.7;
-            word-break: break-word; position: relative;
-        }
-        .message.user .bubble {
-            background: linear-gradient(135deg, var(--brand), #FF8C5A);
-            color: #fff; border-radius: 16px 4px 16px 16px;
-        }
-        .message.bot .bubble {
-            background: #fff; color: #333;
-            border-radius: 4px 16px 16px 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-
-        .message.bot .bubble p { margin: 0 0 6px; }
-        .message.bot .bubble p:last-child { margin: 0; }
-        .message.bot .bubble strong {
-            color: var(--brand-dark); font-weight: 600;
-        }
-
-        /* ── Quick Replies ─────────────────────── */
-        .quick-replies {
-            display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0;
-            align-self: flex-start; max-width: 85%;
-        }
-        .quick-replies button {
-            padding: 8px 15px; border: 1px solid #FFD5C2; border-radius: 20px;
-            background: #fff; color: var(--brand-dark); cursor: pointer;
-            font-size: 13px; transition: all 0.2s; white-space: nowrap;
-            font-family: inherit; font-weight: 500;
-        }
-        .quick-replies button:hover {
-            background: var(--brand); color: #fff; border-color: var(--brand);
-            box-shadow: 0 2px 8px rgba(255,107,53,0.2);
-            transform: translateY(-1px);
-        }
-
-        /* ── Service Cards ─────────────────────── */
-        .service-cards {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
-            padding: 4px 0; align-self: flex-start; max-width: 85%;
-        }
-        .service-card {
-            background: #fff; border: 1px solid #F0F0F0; border-radius: 12px;
-            padding: 14px; cursor: pointer; transition: all 0.2s;
-            display: flex; flex-direction: column; align-items: center;
-            gap: 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-        }
-        .service-card:hover {
-            border-color: var(--brand); box-shadow: 0 4px 12px rgba(255,107,53,0.1);
-            transform: translateY(-2px);
-        }
-        .service-card .icon { font-size: 28px; }
-        .service-card .title { font-size: 13px; color: #555; font-weight: 500; }
-
-        /* ── Typing ────────────────────────────── */
-        .typing-indicator {
-            align-self: flex-start; display: flex; gap: 5px; align-items: center;
-            padding: 12px 16px; background: #fff; border-radius: 4px 16px 16px 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-        .typing-dot {
-            width: 7px; height: 7px; border-radius: 50%; background: #D0D0D0;
-            animation: dotBounce 1.4s infinite both;
-        }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes dotBounce {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-            30% { transform: translateY(-6px); opacity: 1; }
-        }
-
-        /* ── Input Bar ─────────────────────────── */
-        .chat-footer {
-            padding: 12px 16px 16px; background: #fff;
-            border-top: 1px solid #F0F0F0; flex-shrink: 0;
-        }
-        .input-row {
-            display: flex; gap: 10px; align-items: center;
-            background: #F5F6F8; border-radius: 24px; padding: 4px 4px 4px 16px;
-            border: 1.5px solid transparent; transition: all 0.2s;
-        }
-        .input-row:focus-within {
-            border-color: var(--brand); background: #fff;
-            box-shadow: 0 0 0 3px rgba(255,107,53,0.08);
-        }
-        .input-row input {
-            flex: 1; border: none; background: transparent; padding: 10px 0;
-            font-size: 14.5px; outline: none; font-family: inherit; color: #333;
-        }
-        .input-row input::placeholder { color: #B0B0B0; }
-        .input-row .send-btn {
-            width: 38px; height: 38px; border-radius: 50%; border: none;
-            background: linear-gradient(135deg, var(--brand), #FF8C5A);
-            color: #fff; cursor: pointer; font-size: 18px; transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; box-shadow: 0 2px 6px rgba(255,107,53,0.25);
-        }
-        .input-row .send-btn:hover { transform: scale(1.06); box-shadow: 0 4px 12px rgba(255,107,53,0.35); }
-        .input-row .send-btn:disabled { opacity: 0.4; transform: none; box-shadow: none; cursor: not-allowed; }
-
-        /* ── Misc ──────────────────────────────── */
-        .transfer-notice {
-            background: #FFF9F0; border: 1px solid #FFE0B2;
-            border-radius: 12px; padding: 10px 16px; font-size: 13px;
-            color: #B87A20; align-self: center; text-align: center;
-            display: flex; align-items: center; gap: 6px;
-        }
-        .empty-state { text-align: center; color: #6B7280; padding: 30px 16px; font-size: 13px; }
-
-        .overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-            z-index: 99;
-        }
-        @media (max-width: 768px) { .overlay.show { display: block; } }
-    </style>
+    @media (max-width: 1180px) { .app { grid-template-columns: 280px minmax(0, 1fr); } .dock { display: none; } }
+    @media (max-width: 760px) {
+      .app { display: block; }
+      .sidebar { position: fixed; inset: 0 auto 0 0; width: min(86vw, 320px); transform: translateX(-102%); transition: transform .22s ease; box-shadow: 18px 0 50px rgba(16,24,40,.25); }
+      .sidebar.open { transform: translateX(0); }
+      .overlay.show { display: block; }
+      .workspace { height: 100dvh; }
+      .topbar { min-height: 64px; padding: 10px 14px; }
+      .mobile-menu { display: grid; }
+      .agent-avatar { width: 38px; height: 38px; }
+      .agent-heading p { display: none; }
+      .status-pill { width: 9px; height: 9px; margin: 0; padding: 0; background: currentColor; border-radius: 50%; font-size: 0; }
+      .status-pill .status-dot { display: none; }
+      .topbar-actions .icon-btn:nth-of-type(2) { display: none; }
+      .service-route { gap: 4px; padding: 10px 14px; }
+      .route-step { gap: 5px; font-size: 10px; }
+      .route-step:not(:last-child)::after { display: none; }
+      .route-number { width: 18px; height: 18px; font-size: 9px; }
+      .messages-inner { width: calc(100% - 28px); padding-top: 18px; }
+      .welcome { padding-top: 8px; }
+      .welcome h2 { font-size: 25px; }
+      .issue-grid { grid-template-columns: 1fr; }
+      .issue-card { padding: 12px; }
+      .message-stack { max-width: 86%; }
+      .composer-shell { padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
+      .composer-foot { padding-right: 46px; }
+      .composer-foot span:first-child { display: none; }
+      .toast-region { right: 12px; bottom: 90px; left: 12px; }
+      .toast { min-width: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
+  </style>
 </head>
 <body>
-    <div class="app-layout">
-        <!-- ── Overlay (mobile) ── -->
-        <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
-
-        <!-- ── Sidebar ── -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-brand">
-                <div class="logo">🎧</div>
-                <div class="name">消息中心</div>
-            </div>
-            <div class="sidebar-action">
-                <button onclick="newChat()">💬 新建对话</button>
-            </div>
-            <div class="session-list" id="sessionList">
-                <div class="section-title">最近消息</div>
-                <div class="empty-state">暂无历史消息</div>
-            </div>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="历史会话">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M5 5h14v10H8l-3 3V5Z"/><path d="M9 9h6M9 12h4"/></svg>
         </div>
+        <div><div class="brand-title">商服台</div><div class="brand-subtitle">Service Desk</div></div>
+      </div>
+      <button class="new-chat" id="newChatBtn" type="button">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>发起新咨询
+      </button>
+      <label class="search-wrap">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input class="session-search" id="sessionSearch" type="search" placeholder="搜索历史会话" autocomplete="off">
+      </label>
+      <div class="archive-label">最近咨询</div>
+      <div class="session-list" id="sessionList" role="list"><div class="session-empty">正在读取会话…</div></div>
+      <div class="sidebar-foot">会话记录仅与当前浏览器身份关联。<br>请勿发送密码、验证码等敏感信息。</div>
+    </aside>
+    <div class="overlay" id="overlay" aria-hidden="true"></div>
 
-        <!-- ── Chat Area ── -->
-        <div class="chat-container">
-            <div class="chat-header">
-                <button class="menu-btn" onclick="openSidebar()">☰</button>
-                <div class="avatar">🎧</div>
-                <div class="info">
-                    <h3>智能客服中心</h3>
-                    <span><span class="status-dot"></span>在线 · 7×24 小时</span>
-                </div>
-            </div>
-
-            <div class="chat-messages" id="messages">
-                <!-- Welcome -->
-                <div class="message bot">
-                    <div class="avatar-sm">🎧</div>
-                    <div class="body">
-                        <div class="bubble">
-                            <p>您好，欢迎来到智能客服中心！👋</p>
-                            <p>我是您的专属客服助手，请问有什么可以帮您的？</p>
-                        </div>
-                        <div class="service-cards">
-                            <div class="service-card" onclick="sendQuickReply('如何查询订单物流状态？')">
-                                <span class="icon">📦</span>
-                                <span class="title">物流查询</span>
-                            </div>
-                            <div class="service-card" onclick="sendQuickReply('怎么申请退货退款？')">
-                                <span class="icon">↩️</span>
-                                <span class="title">退货退款</span>
-                            </div>
-                            <div class="service-card" onclick="sendQuickReply('支付失败怎么办？')">
-                                <span class="icon">💳</span>
-                                <span class="title">支付问题</span>
-                            </div>
-                            <div class="service-card" onclick="sendQuickReply('如何修改账户密码？')">
-                                <span class="icon">🔒</span>
-                                <span class="title">账户安全</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chat-footer">
-                <div class="input-row">
-                    <input type="text" id="userInput" placeholder="输入您的问题..." autofocus
-                           onkeydown="if(event.key==='Enter') sendMessage()">
-                    <button class="send-btn" onclick="sendMessage()" id="sendBtn">➤</button>
-                </div>
-            </div>
+    <main class="workspace">
+      <header class="topbar">
+        <button class="icon-btn mobile-menu" id="menuBtn" type="button" aria-label="打开会话列表">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="agent-avatar" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M8 9h8M8 13h5"/><path d="M6 4h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 3V6a2 2 0 0 1 2-2Z"/></svg>
         </div>
-    </div>
+        <div class="agent-heading"><h1 id="conversationTitle">智能服务专员</h1><p>订单、退款、支付与账户问题都可以问我</p></div>
+        <div class="topbar-actions">
+          <div class="status-pill" id="connectionStatus" role="status" title="服务状态"><span class="status-dot"></span><span id="statusText">连接中</span></div>
+          <button class="icon-btn" id="exportBtn" type="button" aria-label="导出当前会话" title="导出会话">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 20h14"/></svg>
+          </button>
+          <button class="icon-btn" id="deleteCurrentBtn" type="button" aria-label="删除当前会话" title="删除会话">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M8 10v7m4-7v7m4-7v7M6 7l1 14h10l1-14"/></svg>
+          </button>
+        </div>
+      </header>
 
-    <script>
-        // ── State ──
-        let currentSessionId = localStorage.getItem('scs_session_id') || newSessionId();
-        const API_BASE = '/api/v1';
-        let isWaiting = false;
+      <div class="service-route" id="serviceRoute" aria-live="polite">
+        <div class="route-step" data-step="0"><span class="route-number">1</span><span>理解问题</span></div>
+        <div class="route-step" data-step="1"><span class="route-number">2</span><span>查询信息</span></div>
+        <div class="route-step" data-step="2"><span class="route-number">3</span><span>组织答复</span></div>
+      </div>
 
-        function newSessionId() {
-            const id = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-            localStorage.setItem('scs_session_id', id);
-            return id;
-        }
+      <section class="messages" id="messages" aria-label="对话内容" aria-live="polite">
+        <div class="messages-inner" id="messagesInner"></div>
+      </section>
 
-        // ── Sidebar ──
-        function openSidebar() {
-            document.getElementById('sidebar').classList.add('open');
-            document.getElementById('overlay').classList.add('show');
-        }
-        function closeSidebar() {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('overlay').classList.remove('show');
-        }
+      <footer class="composer-shell">
+        <div class="composer">
+          <div class="composer-row">
+            <textarea id="messageInput" rows="1" maxlength="10000" placeholder="描述你的问题，例如：退款三天了还没到账" aria-label="输入咨询内容"></textarea>
+            <button class="send-btn" id="sendBtn" type="button" aria-label="发送消息">
+              <svg class="icon send-icon" viewBox="0 0 24 24"><path d="m4 12 16-8-5 16-3-7-8-1Z"/><path d="m12 13 8-9"/></svg>
+              <svg class="icon stop-icon" viewBox="0 0 24 24" style="display:none"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+            </button>
+          </div>
+          <div class="composer-foot"><span>Enter 发送 · Shift + Enter 换行 · Esc 停止</span><span id="charCount">0 / 10000</span></div>
+        </div>
+      </footer>
+    </main>
 
-        async function loadSessionList() {
-            try {
-                const r = await fetch(API_BASE + '/sessions');
-                const data = await r.json();
-                const list = document.getElementById('sessionList');
-                if (!data.sessions || data.sessions.length === 0) {
-                    list.innerHTML = '<div class="section-title">最近消息</div><div class="empty-state">暂无历史消息</div>';
-                    return;
-                }
-                list.innerHTML = '<div class="section-title">最近消息</div>' + data.sessions.map(s => {
-                    const d = new Date(s.updated_at);
-                    const now = new Date();
-                    const diff = now - d;
-                    let dateStr;
-                    if (diff < 3600000) dateStr = Math.round(diff/60000) + '分钟前';
-                    else if (diff < 86400000) dateStr = d.toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
-                    else dateStr = d.toLocaleDateString('zh-CN', {month:'short',day:'numeric'});
+    <aside class="dock" aria-label="服务工具">
+      <h2 class="dock-title">服务工具</h2>
+      <div class="dock-card">
+        <div class="dock-label"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3m-.4 6.4 2.1-2.1M12 18v3m6.4-2.6-2.1-2.1M18 12h3m-2.6-6.4-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>快捷任务</div>
+        <div class="task-list">
+          <button class="task-btn" type="button" data-prompt="帮我查询订单物流进度">查询物流 <span>→</span></button>
+          <button class="task-btn" type="button" data-prompt="我想了解退款进度">退款进度 <span>→</span></button>
+          <button class="task-btn" type="button" data-prompt="支付失败了，应该怎么办？">支付异常 <span>→</span></button>
+          <button class="task-btn" type="button" data-prompt="如何修改账户绑定信息？">账户设置 <span>→</span></button>
+        </div>
+      </div>
+      <div class="dock-card">
+        <div class="dock-label"><svg class="icon" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg>当前会话</div>
+        <p id="dockSummary">尚未开始咨询。发送消息后，可在这里导出或重新开始。</p>
+        <div class="dock-actions" style="margin-top:12px">
+          <button class="dock-action" id="dockExportBtn" type="button">导出记录</button>
+          <button class="dock-action" id="dockNewBtn" type="button">重新开始</button>
+        </div>
+      </div>
+      <div class="privacy"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg><span>系统会隐藏身份凭据；为保护账户安全，请勿提供密码或短信验证码。</span></div>
+    </aside>
+  </div>
+  <div class="toast-region" id="toastRegion" aria-live="assertive"></div>
 
-                    const active = s.id === currentSessionId ? ' active' : '';
-                    const safeId = encodeURIComponent(s.id);
-                    const icon = s.title.includes('物流') ? '📦' : s.title.includes('退款') ? '💰' : s.title.includes('密码') ? '🔑' : '💬';
-                    return `<div class="session-item${active}" onclick="switchSession(decodeURIComponent('${safeId}'))">
-                        <div class="icon">${icon}</div>
-                        <div class="content">
-                            <div class="title">${escHtml(s.title || '新对话')}</div>
-                            <div class="date">${dateStr} · ${s.msg_count}条消息</div>
-                        </div>
-                        <button class="del-btn" onclick="event.stopPropagation();delSession(decodeURIComponent('${safeId}'))">✕</button>
-                    </div>`;
-                }).join('');
-            } catch(e) { console.error(e); }
-        }
+  <script>
+    const API_BASE = '/api/v1';
+    const $ = (selector) => document.querySelector(selector);
+    const state = {
+      sessionId: localStorage.getItem('scs_session_id') || createSessionId(),
+      sessions: [], messages: [], pending: false, controller: null, routeTimers: [], lastUserText: ''
+    };
 
-        function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function createSessionId() {
+      const value = (crypto.randomUUID ? crypto.randomUUID() : `web_${Date.now()}_${Math.random().toString(36).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, '_');
+      localStorage.setItem('scs_session_id', value);
+      return value;
+    }
+    function setSessionId(value) { state.sessionId = value; localStorage.setItem('scs_session_id', value); }
+    function icon(name) {
+      const paths = {
+        bot: '<path d="M8 9h8M8 13h5"/><path d="M6 4h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 3V6a2 2 0 0 1 2-2Z"/>',
+        chat: '<path d="M5 5h14v11H9l-4 3V5Z"/>',
+        copy: '<rect x="9" y="9" width="10" height="10" rx="2"/><path d="M15 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>'
+      };
+      return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.chat}</svg>`;
+    }
+    function escapeHtml(value) { const el = document.createElement('div'); el.textContent = String(value ?? ''); return el.innerHTML; }
+    function formatText(value) {
+      let safe = escapeHtml(value);
+      safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>');
+      const blocks = safe.split(/\n{2,}/).map(block => `<p>${block.replace(/\n/g, '<br>')}</p>`);
+      return blocks.join('');
+    }
+    function readableTime(value) {
+      const date = value ? new Date(value) : new Date();
+      if (Number.isNaN(date.getTime())) return '刚刚';
+      return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    }
+    function relativeTime(value) {
+      const date = new Date(value); if (Number.isNaN(date.getTime())) return '';
+      const minutes = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
+      if (minutes < 1) return '刚刚'; if (minutes < 60) return `${minutes} 分钟前`; if (minutes < 1440) return `${Math.floor(minutes / 60)} 小时前`;
+      return date.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+    }
+    function toast(message, kind = '') {
+      const el = document.createElement('div'); el.className = `toast ${kind}`; el.textContent = message;
+      $('#toastRegion').append(el); setTimeout(() => el.remove(), 2800);
+    }
 
-        async function switchSession(id) {
-            if (id === currentSessionId) return;
-            currentSessionId = id;
-            localStorage.setItem('scs_session_id', id);
-            document.getElementById('messages').innerHTML = '';
-            try {
-                const r = await fetch(API_BASE + '/sessions/' + id);
-                if (!r.ok) { newChat(); return; }
-                const data = await r.json();
-                data.messages.forEach(m => addMessage(m.role, m.content, null, null));
-                loadSessionList();
-                closeSidebar();
-            } catch(e) { newChat(); }
-        }
+    async function rawFetch(path, options = {}) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'same-origin', ...options });
+      if (response.status === 401 && !options._retried) {
+        await fetch(`${API_BASE}/auth/anonymous`, { method: 'POST', credentials: 'same-origin' });
+        return rawFetch(path, { ...options, _retried: true });
+      }
+      if (!response.ok) {
+        let message = `请求失败（${response.status}）`;
+        try { const body = await response.json(); message = body.detail || message; } catch (_) {}
+        const error = new Error(message); error.status = response.status; throw error;
+      }
+      return response.json();
+    }
+    async function ensureAuth() { await rawFetch('/auth/anonymous', { method: 'POST', _retried: true }); }
+    async function checkHealth() {
+      const pill = $('#connectionStatus'); const label = $('#statusText');
+      try {
+        const health = await rawFetch('/health', { _retried: true });
+        pill.className = `status-pill${health.status === 'ok' ? '' : ' degraded'}`;
+        label.textContent = health.status === 'ok' ? '服务在线' : '基础服务可用';
+        pill.title = health.status === 'ok' ? '所有服务已就绪' : '部分增强能力暂不可用';
+      } catch (_) { pill.className = 'status-pill offline'; label.textContent = '连接异常'; pill.title = '服务暂时无法连接'; }
+    }
 
-        function newChat() {
-            currentSessionId = newSessionId();
-            document.getElementById('messages').innerHTML = `
-                <div class="message bot">
-                    <div class="avatar-sm">🎧</div>
-                    <div class="body">
-                        <div class="bubble">
-                            <p>您好，欢迎来到智能客服中心！👋</p>
-                            <p>我是您的专属客服助手，请问有什么可以帮您的？</p>
-                        </div>
-                        <div class="service-cards">
-                            <div class="service-card" onclick="sendQuickReply('如何查询订单物流状态？')">
-                                <span class="icon">📦</span><span class="title">物流查询</span>
-                            </div>
-                            <div class="service-card" onclick="sendQuickReply('怎么申请退货退款？')">
-                                <span class="icon">↩️</span><span class="title">退货退款</span>
-                            </div>
-                            <div class="service-card" onclick="sendQuickReply('支付失败怎么办？')">
-                                <span class="icon">💳</span><span class="title">支付问题</span>
-                            </div>
-                            <div class="service-card" onclick="sendQuickReply('如何修改账户密码？')">
-                                <span class="icon">🔒</span><span class="title">账户安全</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            loadSessionList();
-        }
+    function renderWelcome() {
+      $('#messagesInner').innerHTML = `
+        <div class="welcome">
+          <div class="welcome-kicker">AI Service Assistant</div>
+          <h2>你好，今天想解决什么问题？</h2>
+          <p>直接描述遇到的情况，我会先理解问题，再帮你梳理下一步。涉及订单时，请准备好订单号，但不要发送密码或验证码。</p>
+          <div class="issue-grid">
+            ${issueCard('包裹到哪里了？', '查询物流节点与预计送达时间', '帮我查询订单物流进度', 'M4 7h16v10H4zM8 7V5h8v2M8 12h8')}
+            ${issueCard('退款还没到账', '核对退款状态和到账周期', '退款三天了还没到账，帮我看看', 'M4 12a8 8 0 1 0 3-6M4 4v5h5')}
+            ${issueCard('付款遇到问题', '排查失败、重复扣款等异常', '支付失败了，应该怎么办？', 'M3 7h18v11H3zM3 10h18M7 15h3')}
+            ${issueCard('账户与售后', '修改信息或查找售后入口', '如何修改账户绑定信息？', 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0')}
+          </div>
+        </div>`;
+      bindPromptButtons(); updateSummary();
+    }
+    function issueCard(title, desc, prompt, path) {
+      return `<button class="issue-card" type="button" data-prompt="${escapeHtml(prompt)}"><span class="issue-icon"><svg class="icon" viewBox="0 0 24 24"><path d="${path}"/></svg></span><span><span class="issue-title">${title}</span><span class="issue-desc">${desc}</span></span><span class="issue-arrow">›</span></button>`;
+    }
+    function bindPromptButtons() {
+      document.querySelectorAll('[data-prompt]').forEach(button => {
+        if (button.dataset.bound) return; button.dataset.bound = 'true';
+        button.addEventListener('click', () => { $('#messageInput').value = button.dataset.prompt; resizeInput(); sendMessage(); });
+      });
+    }
 
-        async function delSession(id) {
-            if (!confirm('确定删除这条会话吗？')) return;
-            await fetch(API_BASE + '/sessions/' + id, { method: 'DELETE' });
-            if (id === currentSessionId) newChat();
-            else loadSessionList();
-        }
+    function renderSessions() {
+      const query = $('#sessionSearch').value.trim().toLocaleLowerCase('zh-CN');
+      const rows = state.sessions.filter(item => item.title.toLocaleLowerCase('zh-CN').includes(query));
+      const list = $('#sessionList'); list.replaceChildren();
+      if (!rows.length) {
+        const empty = document.createElement('div'); empty.className = 'session-empty'; empty.textContent = query ? '没有匹配的会话' : '还没有历史会话\n发一条消息后会保存在这里'; empty.style.whiteSpace = 'pre-line'; list.append(empty); return;
+      }
+      rows.forEach(item => {
+        const row = document.createElement('div'); row.className = `session-item${item.id === state.sessionId ? ' active' : ''}`; row.setAttribute('role', 'listitem');
+        const open = document.createElement('button'); open.type = 'button'; open.style.cssText = 'display:contents;color:inherit'; open.setAttribute('aria-label', `打开会话：${item.title}`);
+        const symbol = document.createElement('span'); symbol.className = 'session-symbol'; symbol.innerHTML = icon('chat');
+        const copy = document.createElement('span'); copy.className = 'session-copy';
+        const title = document.createElement('span'); title.className = 'session-title'; title.textContent = item.title;
+        const meta = document.createElement('span'); meta.className = 'session-meta'; meta.textContent = `${item.msg_count || 0} 条 · ${relativeTime(item.updated_at)}`;
+        copy.append(title, meta); open.append(symbol, copy); open.addEventListener('click', () => switchSession(item.id));
+        const del = document.createElement('button'); del.type = 'button'; del.className = 'session-delete'; del.innerHTML = '×'; del.setAttribute('aria-label', `删除会话：${item.title}`);
+        del.addEventListener('click', (event) => { event.stopPropagation(); deleteSession(item.id); });
+        row.append(open, del); list.append(row);
+      });
+    }
+    async function loadSessions() {
+      try { const data = await rawFetch('/sessions'); state.sessions = data.sessions || []; renderSessions(); }
+      catch (error) { $('#sessionList').innerHTML = '<div class="session-empty">会话读取失败，稍后可重试</div>'; }
+    }
+    async function switchSession(id) {
+      if (state.pending) abortRequest(false); setSessionId(id); closeSidebar();
+      try {
+        const data = await rawFetch(`/sessions/${encodeURIComponent(id)}`);
+        state.messages = data.messages || []; state.lastUserText = [...state.messages].reverse().find(m => m.role === 'user')?.content || '';
+        $('#conversationTitle').textContent = data.session.title || '智能服务专员'; renderConversation(); renderSessions();
+      } catch (error) { toast(error.message, 'error'); await loadSessions(); }
+    }
+    function startNewChat() {
+      if (state.pending) abortRequest(false); setSessionId(createSessionId()); state.messages = []; state.lastUserText = '';
+      $('#conversationTitle').textContent = '智能服务专员'; renderWelcome(); renderSessions(); closeSidebar(); $('#messageInput').focus();
+    }
+    async function deleteSession(id = state.sessionId) {
+      const known = state.sessions.some(item => item.id === id);
+      if (!known) { if (id === state.sessionId) startNewChat(); return; }
+      if (!window.confirm('确定删除这段会话吗？删除后无法恢复。')) return;
+      try {
+        await rawFetch(`/sessions/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        state.sessions = state.sessions.filter(item => item.id !== id);
+        if (id === state.sessionId) startNewChat(); else renderSessions(); toast('会话已删除');
+      } catch (error) { toast(error.message, 'error'); }
+    }
 
-        // ── Chat ──
-        function scrollBottom() {
-            const el = document.getElementById('messages');
-            el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-        }
+    function renderConversation() {
+      const inner = $('#messagesInner'); inner.replaceChildren();
+      if (!state.messages.length) { renderWelcome(); return; }
+      state.messages.forEach(message => appendMessage(message.role === 'assistant' ? 'bot' : message.role, message.content, [], '', message.created_at, false));
+      updateSummary(); requestAnimationFrame(scrollBottom);
+    }
+    function appendMessage(role, text, quickReplies = [], action = '', createdAt = '', record = true) {
+      if (record) state.messages.push({ role: role === 'bot' ? 'assistant' : role, content: text, created_at: createdAt || new Date().toISOString() });
+      const welcome = $('#messagesInner .welcome'); if (welcome) welcome.remove();
+      const row = document.createElement('article'); row.className = `message-row ${role}`;
+      if (role !== 'user') { const avatar = document.createElement('div'); avatar.className = 'message-avatar'; avatar.innerHTML = icon('bot'); row.append(avatar); }
+      const stack = document.createElement('div'); stack.className = 'message-stack';
+      const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.innerHTML = formatText(text); stack.append(bubble);
+      const meta = document.createElement('div'); meta.className = 'message-meta';
+      const time = document.createElement('span'); time.textContent = readableTime(createdAt); meta.append(time);
+      if (role !== 'user') {
+        const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'message-action'; copy.innerHTML = `${icon('copy')}复制`;
+        copy.addEventListener('click', () => copyText(text)); meta.append(copy);
+      }
+      stack.append(meta);
+      if (quickReplies?.length) {
+        const quick = document.createElement('div'); quick.className = 'quick-replies';
+        quickReplies.forEach(label => { const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'quick-reply'; btn.textContent = label; btn.addEventListener('click', () => sendPrompt(label)); quick.append(btn); }); stack.append(quick);
+      }
+      if (action === 'transfer_human') {
+        const notice = document.createElement('div'); notice.className = 'transfer-notice'; notice.textContent = '已记录转人工请求，请保持页面打开，客服接入后将继续处理。'; stack.append(notice);
+      }
+      row.append(stack); $('#messagesInner').append(row); updateSummary(); requestAnimationFrame(scrollBottom); return row;
+    }
+    function showTyping() {
+      const row = document.createElement('article'); row.className = 'message-row bot'; row.id = 'typingRow';
+      row.innerHTML = `<div class="message-avatar">${icon('bot')}</div><div class="message-stack"><div class="bubble"><div class="typing" aria-label="正在组织答复"><span></span><span></span><span></span></div></div></div>`;
+      $('#messagesInner').append(row); scrollBottom();
+    }
+    function showError(error) {
+      const row = appendMessage('bot', '这次没有成功拿到答复。', [], '', '', false);
+      const card = document.createElement('div'); card.className = 'error-card'; card.append(document.createTextNode(error.name === 'AbortError' ? '请求已停止。' : error.message));
+      const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = '重新发送'; retry.addEventListener('click', retryLast); card.append(retry); row.querySelector('.message-stack').append(card);
+    }
+    function updateSummary() {
+      const turns = state.messages.filter(m => m.role === 'user').length;
+      $('#dockSummary').textContent = turns ? `本次咨询已有 ${turns} 轮提问。可导出为 Markdown 文件留存。` : '尚未开始咨询。发送消息后，可在这里导出或重新开始。';
+    }
 
-        function formatText(text) {
-            let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            html = html.replace(/\n\n+/g, '</p><p>');
-            html = html.replace(/\n/g, '<br>');
-            html = '<p>' + html + '</p>';
-            html = html.replace(/<p><\/p>/g, '');
-            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            return html;
-        }
+    function startRoute() {
+      state.routeTimers.forEach(clearTimeout); state.routeTimers = []; $('#serviceRoute').classList.add('visible'); setRouteStep(0);
+      state.routeTimers.push(setTimeout(() => setRouteStep(1), 900), setTimeout(() => setRouteStep(2), 2400));
+    }
+    function setRouteStep(active) {
+      document.querySelectorAll('.route-step').forEach((step, index) => { step.classList.toggle('done', index < active); step.classList.toggle('active', index === active); });
+    }
+    function stopRoute(success = false) {
+      state.routeTimers.forEach(clearTimeout); state.routeTimers = [];
+      if (success) { document.querySelectorAll('.route-step').forEach(step => { step.classList.add('done'); step.classList.remove('active'); }); }
+      setTimeout(() => $('#serviceRoute').classList.remove('visible'), success ? 500 : 0);
+    }
+    function setPending(value) {
+      state.pending = value; const button = $('#sendBtn'); button.classList.toggle('stop', value); button.disabled = !value && !$('#messageInput').value.trim();
+      button.querySelector('.send-icon').style.display = value ? 'none' : 'block'; button.querySelector('.stop-icon').style.display = value ? 'block' : 'none';
+      button.setAttribute('aria-label', value ? '停止生成' : '发送消息');
+    }
+    async function sendMessage(explicitText = '') {
+      if (state.pending) { abortRequest(); return; }
+      const input = $('#messageInput'); const text = (explicitText || input.value).trim(); if (!text) return;
+      state.lastUserText = text; input.value = ''; resizeInput(); appendMessage('user', text); setPending(true); startRoute(); showTyping();
+      state.controller = new AbortController();
+      try {
+        const data = await rawFetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: state.sessionId, message: text, context: { channel: 'web' } }), signal: state.controller.signal });
+        $('#typingRow')?.remove(); stopRoute(true);
+        appendMessage('bot', data.response.text, data.response.quick_replies, data.response.action);
+        await loadSessions();
+      } catch (error) {
+        $('#typingRow')?.remove(); stopRoute(false); showError(error);
+        if (error.name !== 'AbortError') toast('答复失败，可点击重新发送', 'error');
+      } finally { state.controller = null; setPending(false); input.focus(); }
+    }
+    function abortRequest(showNotice = true) { if (!state.controller) return; state.controller.abort(); if (showNotice) toast('已停止本次请求'); }
+    function retryLast() { if (!state.pending && state.lastUserText) sendMessage(state.lastUserText); }
+    function sendPrompt(text) { $('#messageInput').value = text; resizeInput(); sendMessage(); }
 
-        function addMessage(role, text, quickReplies, action) {
-            const container = document.getElementById('messages');
-            const typing = container.querySelector('.typing-indicator');
-            if (typing) typing.remove();
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); toast('已复制答复'); }
+      catch (_) { const area = document.createElement('textarea'); area.value = text; document.body.append(area); area.select(); document.execCommand('copy'); area.remove(); toast('已复制答复'); }
+    }
+    function exportConversation() {
+      if (!state.messages.length) { toast('当前还没有可导出的消息'); return; }
+      const title = $('#conversationTitle').textContent || '客服会话';
+      const content = [`# ${title}`, '', `导出时间：${new Date().toLocaleString('zh-CN')}`, '', ...state.messages.flatMap(m => [`## ${m.role === 'user' ? '我' : '智能客服'}`, '', m.content, ''])].join('\n');
+      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = `客服会话-${new Date().toISOString().slice(0,10)}.md`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); toast('会话已导出');
+    }
+    function resizeInput() {
+      const input = $('#messageInput'); input.style.height = 'auto'; input.style.height = `${Math.min(input.scrollHeight, 130)}px`;
+      const length = input.value.length; $('#charCount').textContent = `${length} / 10000`; $('#charCount').classList.toggle('near-limit', length > 9000); if (!state.pending) $('#sendBtn').disabled = !input.value.trim();
+    }
+    function scrollBottom() { $('#messages').scrollTop = $('#messages').scrollHeight; }
+    function openSidebar() { $('#sidebar').classList.add('open'); $('#overlay').classList.add('show'); }
+    function closeSidebar() { $('#sidebar').classList.remove('open'); $('#overlay').classList.remove('show'); }
 
-            if (action === 'transfer_human') {
-                const notice = document.createElement('div');
-                notice.className = 'transfer-notice';
-                notice.innerHTML = '🔔 正在为您转接人工客服，请稍候...';
-                container.appendChild(notice);
-            }
-
-            const div = document.createElement('div');
-            div.className = 'message ' + (role === 'user' ? 'user' : 'bot');
-
-            const avatar = document.createElement('div');
-            avatar.className = 'avatar-sm';
-            avatar.textContent = role === 'user' ? '👤' : '🎧';
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'body';
-
-            const bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.innerHTML = formatText(text);
-            wrapper.appendChild(bubble);
-
-            if (quickReplies && quickReplies.length > 0) {
-                const qrDiv = document.createElement('div');
-                qrDiv.className = 'quick-replies';
-                quickReplies.forEach(qr => {
-                    const btn = document.createElement('button');
-                    btn.textContent = qr.label || qr.value;
-                    btn.onclick = () => sendQuickReply(qr.value || qr.label);
-                    qrDiv.appendChild(btn);
-                });
-                wrapper.appendChild(qrDiv);
-            }
-
-            div.appendChild(avatar);
-            div.appendChild(wrapper);
-            container.appendChild(div);
-            scrollBottom();
-        }
-
-        function showTyping() {
-            const container = document.getElementById('messages');
-            const div = document.createElement('div');
-            div.className = 'typing-indicator';
-            div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-            container.appendChild(div);
-            scrollBottom();
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('userInput');
-            const text = input.value.trim();
-            if (!text || isWaiting) return;
-
-            input.value = '';
-            isWaiting = true;
-            document.getElementById('sendBtn').disabled = true;
-            addMessage('user', text);
-            showTyping();
-
-            try {
-                const resp = await fetch(API_BASE + '/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: currentSessionId, message: text, context: { channel: 'web' } })
-                });
-                if (!resp.ok) {
-                    const err = await resp.json();
-                    addMessage('bot', '抱歉，请求失败：' + (err.detail || '未知错误'));
-                    return;
-                }
-                const data = await resp.json();
-                addMessage('bot', data.response.text, data.response.quick_replies, data.response.action);
-                loadSessionList();
-            } catch (e) {
-                addMessage('bot', '网络连接失败，请检查服务是否正常运行。');
-            } finally {
-                isWaiting = false;
-                document.getElementById('sendBtn').disabled = false;
-                document.getElementById('userInput').focus();
-            }
-        }
-
-        function sendQuickReply(text) {
-            document.getElementById('userInput').value = text;
-            sendMessage();
-        }
-
-        async function initApp() {
-            const auth = await fetch(API_BASE + '/auth/anonymous', { method: 'POST' });
-            if (!auth.ok) throw new Error('身份初始化失败');
-            await loadSessionList();
-            document.getElementById('userInput').focus();
-        }
-
-        // ── Init ──
-        initApp().catch(() => addMessage('bot', '身份初始化失败，请刷新页面重试。'));
-    </script>
+    function bindEvents() {
+      $('#newChatBtn').addEventListener('click', startNewChat); $('#dockNewBtn').addEventListener('click', startNewChat);
+      $('#sendBtn').addEventListener('click', () => sendMessage()); $('#exportBtn').addEventListener('click', exportConversation); $('#dockExportBtn').addEventListener('click', exportConversation);
+      $('#deleteCurrentBtn').addEventListener('click', () => deleteSession()); $('#sessionSearch').addEventListener('input', renderSessions);
+      $('#menuBtn').addEventListener('click', openSidebar); $('#overlay').addEventListener('click', closeSidebar); bindPromptButtons();
+      $('#messageInput').addEventListener('input', resizeInput);
+      $('#messageInput').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); sendMessage(); } });
+      document.addEventListener('keydown', event => { if (event.key === 'Escape' && state.pending) abortRequest(); });
+    }
+    async function init() {
+      renderWelcome(); bindEvents(); resizeInput();
+      try { await ensureAuth(); await Promise.all([checkHealth(), loadSessions()]); }
+      catch (_) { await checkHealth(); toast('初始化连接失败，请刷新页面重试', 'error'); }
+      if (state.sessions.some(item => item.id === state.sessionId)) await switchSession(state.sessionId);
+    }
+    init();
+  </script>
 </body>
 </html>

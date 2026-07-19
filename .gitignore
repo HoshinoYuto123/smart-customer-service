@@ -23,6 +23,7 @@ Thumbs.db
 # Temp
 *.log
 .pytest_cache/
+artifacts/ui/
 .claude/
 简历/unpacked/
 简历/简历.docx
