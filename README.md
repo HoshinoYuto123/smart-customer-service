@@ -1,4 +1,4 @@
-# 智能客服 Agent 系统 (SCS-Agent)
+# 智能客服 Agent 系统
 
 🚀 **在线体验**：https://smart-customer-service-8djy.onrender.com/static/chat.html
 
