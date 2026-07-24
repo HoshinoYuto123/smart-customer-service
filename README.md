@@ -220,6 +220,7 @@ scripts/               # 浏览器验收等辅助脚本
 - [业务流程设计](docs/customer-service-business-process-design-v1.md)
 - [PRD](docs/customer-service-prd-v1.md)
 - [技术设计](docs/customer-service-technical-design-v1.md)
+- [关键交互原型与流程图](docs/customer-service-key-interaction-design-v1.md)
 - [需求追踪矩阵](docs/customer-service-requirement-traceability-v1.md)
 - [测试计划](docs/customer-service-test-plan-v1.md)
 - [阶段三验收报告](docs/customer-service-phase3-acceptance-report-v1.md)
