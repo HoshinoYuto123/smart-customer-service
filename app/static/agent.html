@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#12233f">
+  <title>商服台 · 客服工作台（演示）</title>
+  <link rel="stylesheet" href="/static/support.css?v=20260722">
+  <link rel="stylesheet" href="/static/agent.css?v=20260722">
+</head>
+<body class="agent-body">
+  <header class="agent-topbar">
+    <a class="brand compact-brand" href="/"><span class="brand-mark">商</span><span><strong>商服台</strong><small>客服工作台</small></span></a>
+    <span class="mode-badge">演示角色 · AGENT</span>
+    <a class="text-btn" href="/">返回用户端</a>
+  </header>
+  <main class="agent-layout">
+    <section class="agent-list-pane">
+      <div class="pane-title"><div><p class="eyebrow blue">INBOX</p><h1>待处理服务</h1></div><button class="outline-btn" id="agentRefresh">刷新</button></div>
+      <div class="agent-stats" id="agentStats"></div>
+      <div class="filter-row"><button class="active" data-agent-filter="all">全部</button><button data-agent-filter="ticket">工单</button><button data-agent-filter="queue">人工请求</button></div>
+      <div class="agent-cases" id="agentCases"></div>
+    </section>
+    <section class="agent-detail-pane" id="agentDetail">
+      <div class="empty-state"><b>选择一条服务记录</b><p>右侧将展示用户上下文、状态流转、公开回复与内部备注。</p></div>
+    </section>
+  </main>
+  <div id="globalAlert" class="alert" role="status" hidden></div>
+  <script type="module" src="/static/js/agent.js?v=20260722"></script>
+</body>
+</html>

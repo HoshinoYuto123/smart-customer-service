@@ -43,8 +43,10 @@ async def transfer_human(params: dict) -> ToolResult:
             "transferred": True,
             "reason": reason,
             "summary": summary,
-            "message": "已为您转接人工客服，请稍候。当前排队人数: 2",
-            "estimated_wait_seconds": 30,
+            "message": "人工在线时段尚未配置，本次请求将由异步工单承接。",
+            "availability_source": "not_configured",
+            "estimated_wait_seconds": None,
+            "data_mode": "legacy_mock",
             "is_demo_data": True,
         },
     )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from functools import lru_cache
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.agent.types import ChatRequest, ChatResponse, HealthResponse
 from app.agent.service import run_agent_turn
@@ -11,9 +12,14 @@ from app.core.di import get_session_manager
 from app.core.observability import set_trace_id, set_session_id, generate_trace_id, get_logger
 from app.core.config import get_model_config, get_app_config
 from app.core.auth import COOKIE_NAME, Principal, get_request_principal, issue_token, set_auth_cookie, verify_token
+from app.support.models import Role
 
 router = APIRouter(prefix="/api/v1")
 logger = get_logger(__name__)
+
+
+class DemoRoleRequest(BaseModel):
+    role: Role
 
 
 @router.post("/auth/anonymous")
@@ -23,12 +29,25 @@ async def create_anonymous_identity(request: Request, response: Response):
     if existing:
         try:
             principal = verify_token(existing)
-            return {"user_id": principal.user_id}
+            if principal.role in {Role.GUEST, Role.USER, Role.MEMBER}:
+                return {"user_id": principal.user_id, "role": principal.role.value}
         except HTTPException:
             pass
     token, principal = issue_token()
     set_auth_cookie(response, token)
-    return {"user_id": principal.user_id}
+    return {"user_id": principal.user_id, "role": principal.role.value}
+
+
+@router.post("/auth/demo-role")
+async def create_demo_role(request: DemoRoleRequest, response: Response):
+    """Issue a role-bearing identity only for the explicitly labelled demo UI."""
+    if get_app_config().app.mode != "demo":
+        raise HTTPException(status_code=403, detail="生产环境禁止签发演示角色")
+    if request.role not in {Role.AGENT, Role.SUPERVISOR, Role.OPERATOR, Role.ADMIN}:
+        raise HTTPException(status_code=400, detail="不支持的演示角色")
+    token, principal = issue_token(role=request.role)
+    set_auth_cookie(response, token)
+    return {"user_id": principal.user_id, "role": principal.role.value, "data_mode": "mock"}
 
 
 @router.get("/health", response_model=HealthResponse)

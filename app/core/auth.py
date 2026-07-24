@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from fastapi import HTTPException, Request, Response, WebSocket
 
 from app.core.config import get_app_config
+from app.support.models import Role
 
 COOKIE_NAME = "scs_auth"
 
@@ -25,6 +26,7 @@ COOKIE_NAME = "scs_auth"
 @dataclass(frozen=True)
 class Principal:
     user_id: str
+    role: Role = Role.USER
 
 
 def _b64encode(data: bytes) -> str:
@@ -35,11 +37,12 @@ def _b64decode(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
 
-def issue_token(user_id: str | None = None) -> tuple[str, Principal]:
+def issue_token(user_id: str | None = None, role: Role = Role.USER) -> tuple[str, Principal]:
     config = get_app_config().auth
-    principal = Principal(user_id=user_id or f"anon_{uuid.uuid4().hex}")
+    principal = Principal(user_id=user_id or f"anon_{uuid.uuid4().hex}", role=role)
     payload = {
         "sub": principal.user_id,
+        "role": principal.role.value,
         "exp": int(time.time()) + config.token_ttl_seconds,
     }
     encoded = _b64encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
@@ -63,7 +66,11 @@ def verify_token(token: str) -> Principal:
         user_id = str(payload["sub"])
         if not user_id:
             raise ValueError("missing subject")
-        return Principal(user_id=user_id)
+        try:
+            role = Role(str(payload.get("role", Role.USER.value)))
+        except ValueError:
+            role = Role.USER
+        return Principal(user_id=user_id, role=role)
     except Exception as exc:
         raise HTTPException(status_code=401, detail="身份凭证无效或已过期") from exc
 

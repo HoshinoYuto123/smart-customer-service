@@ -23,7 +23,11 @@ Thumbs.db
 # Temp
 *.log
 .pytest_cache/
-artifacts/ui/
+artifacts/ui/*
+!artifacts/ui/customer-home-desktop.png
+!artifacts/ui/self-service-result-desktop.png
+!artifacts/ui/agent-workspace-desktop.png
+!artifacts/ui/customer-home-mobile.png
 .claude/
 简历/unpacked/
 简历/简历.docx

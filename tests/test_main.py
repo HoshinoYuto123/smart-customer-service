@@ -8,7 +8,7 @@ def test_root_redirects_to_versioned_chat_ui():
         response = client.get("/", follow_redirects=False)
 
     assert response.status_code == 307
-    assert response.headers["location"] == "/static/chat.html?v=20260719-ui2"
+    assert response.headers["location"] == "/static/chat.html?v=20260722-phase3"
 
 
 def test_chat_ui_disables_browser_cache():

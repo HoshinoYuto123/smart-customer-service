@@ -37,6 +37,7 @@ def init_db():
             user_id TEXT DEFAULT '',
             channel TEXT DEFAULT 'web',
             clarify_count INTEGER DEFAULT 0,
+            unresolved_count INTEGER DEFAULT 0,
             current_domain TEXT DEFAULT '',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
@@ -57,6 +58,8 @@ def init_db():
     columns = {row[1] for row in conn.execute("PRAGMA table_info(sessions)").fetchall()}
     if "clarify_count" not in columns:
         conn.execute("ALTER TABLE sessions ADD COLUMN clarify_count INTEGER DEFAULT 0")
+    if "unresolved_count" not in columns:
+        conn.execute("ALTER TABLE sessions ADD COLUMN unresolved_count INTEGER DEFAULT 0")
     if "current_domain" not in columns:
         conn.execute("ALTER TABLE sessions ADD COLUMN current_domain TEXT DEFAULT ''")
     conn.commit()
@@ -183,6 +186,7 @@ def update_session_state(
     session_id: str,
     *,
     clarify_count: int | None = None,
+    unresolved_count: int | None = None,
     current_domain: str | None = None,
 ) -> None:
     updates: list[str] = []
@@ -190,6 +194,9 @@ def update_session_state(
     if clarify_count is not None:
         updates.append("clarify_count = ?")
         values.append(max(clarify_count, 0))
+    if unresolved_count is not None:
+        updates.append("unresolved_count = ?")
+        values.append(max(unresolved_count, 0))
     if current_domain is not None:
         updates.append("current_domain = ?")
         values.append(current_domain)
@@ -211,6 +218,7 @@ def record_turn(
     assistant_content: str,
     clarify_count: int,
     current_domain: str,
+    unresolved_count: int = 0,
 ) -> None:
     """Atomically persist both messages and the resulting session state."""
     conn = _get_conn()
@@ -226,8 +234,11 @@ def record_turn(
         )
         conn.execute(
             "UPDATE sessions SET title = CASE WHEN title = '' THEN ? ELSE title END, "
-            "clarify_count = ?, current_domain = ?, updated_at = ? WHERE id = ?",
-            (user_content.strip()[:20], max(clarify_count, 0), current_domain, now, session_id),
+            "clarify_count = ?, unresolved_count = ?, current_domain = ?, updated_at = ? WHERE id = ?",
+            (
+                user_content.strip()[:20], max(clarify_count, 0),
+                max(unresolved_count, 0), current_domain, now, session_id,
+            ),
         )
         count = conn.execute(
             "SELECT COUNT(*) FROM messages WHERE session_id = ?", (session_id,)

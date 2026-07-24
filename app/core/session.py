@@ -43,6 +43,7 @@ class SessionManager:
             user_id=session.get("user_id", user_id),
             channel=session.get("channel", channel),
             clarify_count=session.get("clarify_count", 0),
+            unresolved_count=session.get("unresolved_count", 0),
             current_domain=session.get("current_domain", ""),
             history=history,
             created_at=session.get("created_at", ""),
@@ -87,6 +88,7 @@ class SessionManager:
         assistant_content: str,
         clarify_count: int,
         current_domain: str,
+        unresolved_count: int = 0,
     ) -> None:
         await asyncio.to_thread(
             session_store.record_turn,
@@ -94,6 +96,7 @@ class SessionManager:
             user_content=user_content,
             assistant_content=assistant_content,
             clarify_count=clarify_count,
+            unresolved_count=unresolved_count,
             current_domain=current_domain,
         )
 

@@ -35,8 +35,6 @@ def _format_order(order: dict) -> str:
         f"快递单号: {order.get('tracking_number', '暂无')}\n"
         f"下单时间: {order.get('created_at', '')}\n"
         f"预计送达: {order.get('estimated_delivery', '')}\n"
-        f"收货人: {order.get('receiver_name', '')}\n"
-        f"收货地址: {order.get('receiver_address', '')}\n"
         f"物流详情:\n{tracking_lines}"
     )
 
@@ -108,8 +106,6 @@ async def query_order(params: dict) -> ToolResult:
             "tracking_number": order.get("tracking_number", ""),
             "created_at": order.get("created_at", ""),
             "estimated_delivery": order.get("estimated_delivery", ""),
-            "receiver_name": order.get("receiver_name", ""),
-            "receiver_address": order.get("receiver_address", ""),
             "tracking_history": order.get("tracking_history", []),
             "detail_text": _format_order(order),
         })
@@ -126,5 +122,7 @@ async def query_order(params: dict) -> ToolResult:
                 else "未找到匹配订单，请核对订单号或手机号。"
             ),
             "is_demo_data": True,
+            "data_mode": "legacy_mock",
+            "privacy_notice": "演示数据不返回收货人姓名、手机号或详细地址。",
         },
     )

@@ -6,6 +6,13 @@ from app.agent.graph import agent_graph
 from app.agent.state import AgentState
 from app.agent.types import AgentResponse, SessionContext
 from app.core.session import SessionManager
+from app.support.policy import (
+    reports_unresolved,
+    sanitize_user_text,
+    summarize_for_handoff,
+    transfer_reason,
+)
+from app.support.service import support_service
 
 
 async def run_agent_turn(
@@ -17,10 +24,45 @@ async def run_agent_turn(
     channel: str,
     trace_id: str,
 ) -> AgentResponse:
+    safe_message, sensitive_data_removed = sanitize_user_text(message)
+    unresolved_count = session.unresolved_count + 1 if reports_unresolved(safe_message) else 0
+    reason = transfer_reason(safe_message, unresolved_count=unresolved_count)
+    if reason:
+        key = support_service.deterministic_key(session.session_id, reason, str(unresolved_count))
+        queue = support_service.request_human(
+            user_id=user_id,
+            session_id=session.session_id,
+            reason=reason,
+            summary=summarize_for_handoff(safe_message),
+            idempotency_key=key,
+        )
+        response = AgentResponse(
+            text=queue.service_message,
+            action="transfer_human",
+            metadata={
+                "trace_id": trace_id,
+                "reason": reason,
+                "queue_id": queue.id,
+                "queue_status": queue.status.value,
+                "ticket_id": queue.ticket_id,
+                "data_mode": queue.data_mode,
+                "sensitive_data_removed": sensitive_data_removed,
+            },
+        )
+        await session_manager.record_turn(
+            session.session_id,
+            user_content=safe_message,
+            assistant_content=response.text,
+            clarify_count=session.clarify_count,
+            unresolved_count=unresolved_count,
+            current_domain=session.current_domain,
+        )
+        return response
+
     initial_state: AgentState = {
         "messages": [],
         "session_id": session.session_id,
-        "user_input": message,
+        "user_input": safe_message,
         "user_id": user_id,
         "channel": channel,
         "current_domain": session.current_domain,
@@ -49,9 +91,10 @@ async def run_agent_turn(
 
     await session_manager.record_turn(
         session.session_id,
-        user_content=message,
+        user_content=safe_message,
         assistant_content=response.text,
         clarify_count=int(result.get("clarify_count", session.clarify_count)),
+        unresolved_count=unresolved_count,
         current_domain=(result.get("router_result") or {}).get("domain", session.current_domain),
     )
     return response

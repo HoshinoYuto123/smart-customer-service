@@ -147,6 +147,7 @@ class SessionContext(BaseModel):
     user_id: str = ""
     channel: str = "web"
     clarify_count: int = 0
+    unresolved_count: int = 0
     current_domain: str = ""
     history: list[dict] = Field(default_factory=list)
     created_at: str = ""

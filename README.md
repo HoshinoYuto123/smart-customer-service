@@ -1,112 +1,236 @@
-# 智能客服 Agent 系统
+# 智能客服服务平台
 
-🚀 **在线体验**：https://smart-customer-service-8djy.onrender.com/static/chat.html?v=20260719-ui2
+> 在线版本：[smart-customer-service-8djy.onrender.com](https://smart-customer-service-8djy.onrender.com/)
+>
+> 仓库中的阶段三版本只有在代码推送并完成部署后才会出现在在线地址。链接使用站点根路径，避免 README 固定到旧的静态资源版本。
 
-基于 LangGraph + DeepSeek 的智能客服参考实现，支持多轮对话、工具调用、RAG 知识库、会话隔离与历史管理。项目默认以 `demo` 模式运行；接入真实业务 API 和外部会话存储后再用于生产环境。
+这是一个基于 FastAPI、LangGraph、SQLite 和原生 HTML/CSS/JS 的客服服务平台参考实现。当前包含用户服务台、FAQ、自助服务、智能客服、确定性转人工策略、异步工单、服务进度、评价闭环和演示客服工作台。
 
-## 功能特性
+## 项目截图
 
-- **多轮对话** — LangGraph 状态机驱动，自动反问澄清模糊问题
-- **智能路由** — 关键词 + 业务域摘要 + LLM 路由，保守选择业务工具
-- **工具调用** — FAQ 检索 / 订单查询 / 账户查询 / 工单 / 转人工
-- **物流查询** — 内置带明确标记的演示物流数据；查不到时不会伪造订单
-- **RAG 知识库** — 4 个业务域 × 40 条 FAQ，混合检索（向量 + BM25）+ 重排
-- **多模型** — DeepSeek / OpenAI / Claude / Qwen 可切换
-- **历史会话** — 签名 HttpOnly 身份 Cookie + SQLite 所有权隔离，持久化对话和澄清状态
-- **弹性机制** — LLM/工具统一接入并发上限、队列、超时、熔断和指数退避重试
-- **美观界面** — 淘宝/天猫/京东风格电商客服 UI
+### 用户服务首页
+
+用户从订单、课程或账号上下文开始，可直接进入高频自助服务、FAQ 或智能客服。页面中的订单、课程和处理结果均明确标注为 Mock。
+
+![用户服务首页：业务对象、自助服务和 FAQ 入口](artifacts/ui/customer-home-desktop.png)
+
+### 自助服务结果
+
+自助服务在结果层展示数据来源、处理状态和下一步路径；未解决时可以直接提交人工请求。
+
+![物流自助服务结果与转人工入口](artifacts/ui/self-service-result-desktop.png)
+
+### 客服工作台
+
+演示客服角色可以查看人工请求和工单，读取交接摘要，添加公开回复或内部备注，并按状态机更新工单状态。
+
+![客服工作台：工单列表、时间线和处理操作](artifacts/ui/agent-workspace-desktop.png)
+
+### 移动端
+
+390px 宽度下保留业务对象、自助服务和底部主导航，无横向溢出。
+
+<img src="artifacts/ui/customer-home-mobile.png" alt="移动端用户服务首页" width="390">
+
+## 当前能力
+
+- 用户端服务首页：按演示订单、课程、账号加载业务上下文。
+- FAQ：分类、搜索、详情、解决/未解决反馈。
+- 自助服务：物流、订单修改/取消、退款、换货补发、账号、课程、发票合同、申诉和进度等 13 项能力。
+- 智能客服：LangGraph 多轮流程、RAG、工具调用和会话持久化。
+- 转人工：用户明确要求人工、资金/账号高风险、连续两次反馈未解决时，在生成式链路前确定性分流。
+- 工单闭环：异步人工承接、状态流转、公开回复、内部备注、站内 Mock 通知、结果确认和评分。
+- 客服工作台：演示角色隔离、队列/工单列表、详情、备注和合法状态流转。
+- 安全边界：HttpOnly 签名身份 Cookie、资源所有权校验、敏感文本脱敏、审计记录和幂等键。
+
+## 重要：Mock 边界
+
+项目默认以 `APP_MODE=demo` 运行。订单、课程、自助执行、通知、人工在线状态和客服角色均为本地 Mock，并在接口和界面标注 `data_mode=mock` 或“演示环境”。
+
+- 不会修改真实订单、资金、账号或课程数据。
+- 人工服务时间、排队人数和 SLA 尚未配置，因此不会展示虚构的等待时间。
+- 密码重置等安全操作会失败关闭，要求接入真实身份验证或人工核验。
+- 生产模式下不得使用演示角色签发接口；需要替换真实业务、身份、通知和坐席适配器。
 
 ## 快速开始
 
-### 1. 安装依赖
+建议使用 Python 3.11（部署配置为 3.11.9）。
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
 ```
 
-### 2. 配置 API Key
+创建 `.env`。演示模式可以在未配置 LLM Key 时使用降级能力；生产模式必须设置高强度 `AUTH_SECRET`：
 
-创建 `.env`，至少填入 DeepSeek API Key。生产模式还必须配置共享的高强度 `AUTH_SECRET`：
-
-```
-DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxx
+```dotenv
 APP_MODE=demo
 AUTH_SECRET=replace-with-a-long-random-secret
+DEEPSEEK_API_KEY=
+SKIP_EMBEDDING_MODEL=1
 ```
 
-### 3. 启动服务
+启动：
 
 ```bash
-python -m app.main
+.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-### 4. 打开界面
+打开：
 
-浏览器访问 **https://smart-customer-service-8djy.onrender.com/static/chat.html?v=20260719-ui2**
+- 用户服务台：`http://127.0.0.1:8000/`
+- 演示客服工作台：`http://127.0.0.1:8000/static/agent.html`
+- OpenAPI：`http://127.0.0.1:8000/docs`
 
-## 项目结构
+## 使用说明
 
+### 用户端
+
+1. 打开用户服务台。系统会签发匿名 HttpOnly 身份 Cookie，并加载仅属于当前演示用户的订单、课程和账号上下文。
+2. 在“选择服务对象”中选择要咨询的订单、课程或账号。快速办理项会随对象类型变化。
+3. 对常见问题，可直接使用以下两种路径：
+   - 在“快速办理”中执行物流、退款进度、课程有效期等自助任务；
+   - 在“查找答案”中按分类浏览或搜索 FAQ，并反馈“已解决/未解决”。
+4. 需要继续描述时，进入“智能客服”。支持快捷问题和自然语言输入；不要发送密码、验证码、银行卡号或其他敏感信息。
+5. 以下情况会转入人工承接：
+   - 用户明确输入“转人工”“人工客服”等请求；
+   - 问题涉及账号被盗、非本人支付、重复扣款等高风险信号；
+   - 用户连续两次反馈“未解决”“还是不行”等。
+6. 当前没有配置真实坐席在线时间，人工请求会生成异步工单，不展示虚构的排队人数或等待时长。
+7. 在“服务进度”中查看自助任务、人工请求、工单状态和通知。工单进入“待用户确认”或“已关闭”后可确认结果并评分；反馈未解决会重开工单。
+
+### 客服端（演示）
+
+1. 打开 `http://127.0.0.1:8000/static/agent.html`。
+2. 页面仅在 `APP_MODE=demo` 下签发演示客服角色；生产模式禁止使用该入口授权。
+3. 在左侧按“全部 / 工单 / 人工请求”筛选服务记录。
+4. 选择工单后查看用户问题、脱敏交接摘要、状态时间线和历史回复。
+5. 可添加：
+   - **公开回复**：会进入面向用户的工单记录；
+   - **内部备注**：仅客服及以上角色可见。
+6. 通过“选择目标状态”执行合法流转。前端只展示当前状态允许到达的目标，后端状态机还会再次校验。
+
+### 常见演示路径
+
+| 目标 | 操作路径 | 预期结果 |
+|---|---|---|
+| 查询物流 | 选择演示订单 → 查询物流 | 返回带 `MOCK` 标记的物流节点 |
+| 查询课程权益 | 选择演示课程 → 课程有效期 | 返回演示课程可学习状态 |
+| 请求退款 | 选择订单/课程 → 申请退款 → 确认 | 生成演示自助任务，不修改真实资金 |
+| 转人工 | 智能客服输入“我要转人工客服” | 创建异步人工请求和关联工单 |
+| 查看处理进度 | 底部/侧栏“服务进度” | 展示任务、队列、工单和通知记录 |
+| 客服处理 | 客服工作台 → 选择工单 → 回复/更新状态 | 新增处理记录并刷新状态时间线 |
+
+## Agent 流程图
+
+下图对应当前代码中的确定性前置策略与 LangGraph 节点。高风险、明确人工请求和连续未解决不会交给生成式回答判断，而是在进入图之前直接转人工。
+
+```mermaid
+flowchart TD
+    A["收到用户消息"] --> B["文本规范化与敏感信息脱敏"]
+    B --> C{"明确要求人工<br/>或命中资金/账号高风险？"}
+    C -- 是 --> H["生成脱敏交接摘要"]
+    C -- 否 --> D["更新连续未解决计数"]
+    D --> E{"连续两次未解决？"}
+    E -- 是 --> H
+    E -- 否 --> F["进入 LangGraph"]
+
+    H --> I["创建异步人工请求"]
+    I --> J["创建关联工单"]
+    J --> K["持久化会话、队列、工单与审计"]
+    K --> Z["返回转人工结果与服务进度入口"]
+
+    F --> L["Clarify：判断是否需要澄清"]
+    L --> M{"澄清结果"}
+    M -- "需要补充" --> R["Respond：返回澄清问题"]
+    M -- "超过最大轮次" --> Q["Fallback：规则降级/人工兜底"]
+    M -- "信息足够" --> N["Router：关键词 → 业务域摘要 → LLM 路由"]
+    N --> O["Executor：RAG 检索与工具调用"]
+    O --> P{"执行结果"}
+    P -- "需要更多工具" --> O
+    P -- "执行异常" --> Q
+    P -- "结果就绪" --> R
+    Q --> S["生成可解释的降级结果"]
+    R --> T["生成回答、快捷选项与元数据"]
+    S --> U["记录本轮消息与状态"]
+    T --> U
+    U --> V["返回用户端"]
 ```
-smart-customer-service/
-├── app/
-│   ├── main.py                  # FastAPI 入口
-│   ├── agent/
-│   │   ├── graph.py             # LangGraph 状态机
-│   │   ├── service.py           # 单轮执行与状态持久化
-│   │   ├── state.py             # AgentState 定义
-│   │   └── nodes/               # 5 个节点 (clarify/router/executor/respond/fallback)
-│   ├── llm/                     # LLM Provider 抽象层
-│   │   └── {openai,claude,qwen,mock}_provider.py
-│   ├── rag/                     # RAG 知识库 (ChromaDB + BM25 + Rerank)
-│   ├── tools/                   # 工具注册 + 6 个内置工具
-│   ├── resilience/              # 熔断/重试/限流
-│   ├── prompts/templates/       # YAML 模板化 Prompt
-│   ├── core/                    # 配置/身份/会话/日志/DI
-│   ├── api/                     # REST + WebSocket 接口
-│   └── static/                  # 聊天前端页面
-├── knowledge_base/
-│   ├── domains/                 # 4 个业务域 FAQ + 摘要
-│   └── logistics_db.json       # 物流信息数据库
-├── configs/                     # YAML 配置文件
-├── tests/                       # 单元测试 + 集成测试
-├── docker/                      # Docker 部署
-└── k8s/                         # K8s 部署
+
+关键实现位置：
+
+- `app/agent/service.py`：确定性转人工前置策略与单轮持久化；
+- `app/support/policy.py`：人工关键词、高风险、连续未解决和脱敏规则；
+- `app/agent/graph.py`：Clarify、Router、Executor、Respond、Fallback 图结构；
+- `app/support/service.py`：队列、工单、进度、评价和审计编排；
+- `app/support/state_machine.py`：自助任务、队列和工单的合法状态流转。
+
+## 测试
+
+后端、API、权限与静态 UI 契约：
+
+```bash
+$env:SKIP_EMBEDDING_MODEL='1'
+$env:HF_HUB_OFFLINE='1'
+.venv\Scripts\python.exe -m compileall -q app tests
+.venv\Scripts\python.exe -m pytest -q
 ```
 
-## API 接口
+真实 Chrome 桌面/移动端流程验收（先在 8765 端口启动应用）：
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 聊天界面 |
-| POST | `/api/v1/auth/anonymous` | 签发匿名身份 Cookie |
-| POST | `/api/v1/chat` | 发送消息 |
-| GET | `/api/v1/sessions` | 历史会话列表 |
-| GET | `/api/v1/sessions/{id}` | 会话详情 |
-| DELETE | `/api/v1/sessions/{id}` | 删除会话 |
-| GET | `/api/v1/health` | 健康检查 |
-| GET | `/api/v1/health/live` | K8s 存活检查 |
-| GET | `/api/v1/health/ready` | 依赖就绪检查 |
+```bash
+.venv\Scripts\python.exe scripts\ui_cdp_smoke.py
+```
 
-除健康检查和身份签发外，API 需要 `scs_auth` Cookie（或 Bearer Token）。会话始终按身份所有者过滤。
+脚本覆盖：上下文加载、自助服务、转人工/工单、服务进度、客服公开回复、工单状态流转、390px 移动端、浏览器异常和横向溢出检查。截图保存到 `artifacts/ui/`。
 
-## 运行模式与部署限制
+## 目录结构
 
-- `APP_MODE=demo`：允许使用内置订单、账户、工单和人工队列演示适配器，响应中包含 `is_demo_data=true`。
-- `APP_MODE=production`：未配置真实业务适配器时失败关闭，不返回模拟数据。
-- `SKIP_EMBEDDING_MODEL=1`：关闭向量检索并安全降级为中文 BM25；适合没有预装模型的轻量部署。
-- 当前会话存储仍为 SQLite，因此 K8s 配置固定为单副本并挂载 PVC。迁移到 PostgreSQL/Redis 后才能重新开启 HPA。
+```text
+app/
+├─ agent/              # LangGraph 状态机、节点和确定性转人工前置策略
+├─ api/                # REST、WebSocket、Support API 与 RBAC
+├─ core/               # 配置、身份、会话、日志和依赖注入
+├─ support/            # 客服领域模型、状态机、服务、SQLite 存储和 Mock 适配器
+├─ static/             # 用户服务台、客服工作台、CSS 与 ES 模块
+├─ tools/              # Agent 工具注册与兼容工具
+└─ main.py             # FastAPI 应用入口
+docs/                  # 调研、流程、PRD、技术设计、追踪矩阵、测试和验收报告
+tests/                 # 单元、API、权限、Agent、客服领域和 UI 契约测试
+scripts/               # 浏览器验收等辅助脚本
+```
 
-## 技术栈
+## 核心 API
 
-| 层级 | 选型 |
-|------|------|
-| Agent 框架 | LangGraph |
-| LLM | DeepSeek / OpenAI / Claude / Qwen |
-| 向量库 | ChromaDB |
-| 后端 | FastAPI |
-| 存储 | SQLite |
-| 前端 | 原生 HTML/CSS/JS |
-| 部署 | Docker + K8s |
+| 范围 | 主要接口 |
+|---|---|
+| 身份与会话 | `POST /api/v1/auth/anonymous`、`POST /api/v1/support/sessions` |
+| 客服首页 | `GET /api/v1/support/home`、`GET /context`、`GET /categories` |
+| FAQ | `GET /api/v1/support/faqs`、`GET /faqs/{id}`、`POST /faqs/{id}/feedback` |
+| 自助服务 | `POST /api/v1/support/self-service`、`GET /self-service/{id}` |
+| 智能客服 | `POST /api/v1/chat`、`WS /api/v1/ws/chat` |
+| 人工与工单 | `POST /api/v1/support/queue`、`GET/POST /tickets`、状态流转与评论接口 |
+| 闭环 | `GET /api/v1/support/progress`、`POST /ratings`、`POST /events` |
+| 客服工作台 | `GET /api/v1/agent/workspace`（仅客服及以上角色） |
+
+所有客服领域接口采用统一成功/错误结构，并返回 `trace_id`。创建自助任务、人工请求和工单时需要 `Idempotency-Key`。
+
+## 技术与产品文档
+
+- [业务流程设计](docs/customer-service-business-process-design-v1.md)
+- [PRD](docs/customer-service-prd-v1.md)
+- [技术设计](docs/customer-service-technical-design-v1.md)
+- [需求追踪矩阵](docs/customer-service-requirement-traceability-v1.md)
+- [测试计划](docs/customer-service-test-plan-v1.md)
+- [阶段三验收报告](docs/customer-service-phase3-acceptance-report-v1.md)
+
+## 生产化前置条件
+
+1. 接入真实统一身份与坐席权限系统，替换演示角色接口。
+2. 接入订单、支付、课程、安全认证、客服队列和通知服务适配器。
+3. 由运营确认人工服务时间、SLA、升级规则和消息模板。
+4. 多副本部署前将 SQLite 会话/业务状态迁移到共享数据库和缓存。
+5. 补齐生产监控、告警、数据保留策略、隐私评审和灾备演练。
 
 ## License
 

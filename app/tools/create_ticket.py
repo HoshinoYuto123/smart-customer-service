@@ -79,7 +79,9 @@ async def create_ticket(params: dict) -> ToolResult:
             "category": category,
             "status": "待处理",
             "created_at": datetime.now().isoformat(),
-            "estimated_response_time": "2小时内",
+            "service_level_status": "not_configured",
+            "service_message": "处理时效尚未配置，请通过服务进度查看最新状态。",
+            "data_mode": "legacy_mock",
             "is_demo_data": True,
         },
     )
