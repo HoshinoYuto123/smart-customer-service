@@ -28,6 +28,7 @@ artifacts/ui/*
 !artifacts/ui/self-service-result-desktop.png
 !artifacts/ui/agent-workspace-desktop.png
 !artifacts/ui/customer-home-mobile.png
+!artifacts/ui/key-interaction-prototype-desktop.png
 .claude/
 简历/unpacked/
 简历/简历.docx
